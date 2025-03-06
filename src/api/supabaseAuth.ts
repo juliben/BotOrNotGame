@@ -17,13 +17,22 @@ export const signIn = async (email: string, password: string) => {
 };
 
 export const signInAnonymously = async () => {
-  const { data, error } = await supabase.auth.signInAnonymously();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.signInAnonymously();
   if (error) {
     console.log("Error signing in anonymously:", error);
-    return { error };
   }
-
-  return { data };
+  if (user) {
+    const { error } = await supabase
+      .from("players")
+      .insert({ user_id: user.id });
+    if (error) {
+      console.log("Error inserting player:", error);
+    }
+    return user.id;
+  }
 };
 
 export const logOut = async () => {

@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { signInAnonymously } from "@/api/supabaseAuth";
 import { useNavigate } from "react-router-dom";
-import React from "react";
 
 const Homepage = () => {
   const navigate = useNavigate();
 
   const handleSignInAnonymously = async () => {
     try {
-      await signInAnonymously();
+      const userId = await signInAnonymously();
+      console.log("User ID:", userId);
+      localStorage.setItem("userId", userId);
       navigate("/lobby");
     } catch (error) {
       console.error("Authentication failed:", error);

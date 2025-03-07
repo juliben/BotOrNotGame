@@ -225,8 +225,16 @@ const Lobby = () => {
       <Button onClick={() => getUserId()}>Generate name</Button>
 
       <div className="flex flex-row justify-center items-center gap-2">
-        <Checkbox checked={ready} onCheckedChange={handleReady} />
-        <Label>Ready</Label>
+        <Checkbox
+          checked={ready}
+          onCheckedChange={handleReady}
+          disabled={!waiting || name === ""}
+        />
+        <Label
+          className={!waiting || name === "" ? "text-muted-foreground" : ""}
+        >
+          Ready
+        </Label>
       </div>
     </div>
   );

@@ -33,7 +33,7 @@ const Homepage = () => {
       <Button variant="secondary" className="w-fit">
         SIGN IN / REGISTER
       </Button>
-      <Button variant="outline" className="w-fit ">
+      <Button variant="outline" className="w-fit">
         LEADERBOARD
       </Button>
     </div>

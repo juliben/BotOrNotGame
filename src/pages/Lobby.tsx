@@ -18,6 +18,8 @@ const Lobby = () => {
   const [roomId, setRoomId] = useState("");
   const [playerCount, setPlayerCount] = useState(0);
   const [readyCount, setReadyCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const queryRooms = async () => {
@@ -209,9 +211,31 @@ const Lobby = () => {
     return () => clearInterval(countdownTimer);
   }, [waiting, navigate]);
 
+  const fetchGeneratedName = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:3000/");
+      if (!response.ok) {
+        throw new Error("Failed to fetch name");
+      }
+
+      const data = await response.json();
+      // setName(data.name);
+      console.log("DATA:", data);
+      // console.log("Generated name:", data.name);
+    } catch (error) {
+      console.error("Error fetching name:", error);
+      setError("Error fetching name");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20">
-      <p>Waiting for humans...{readyCount}/3</p>
+      <p>Waiting for humans to be ready...{readyCount}/3</p>
       {waiting && <Icons.spinner className="h-4 w-4 animate-spin" />}
       {!waiting && <p>Starting in {count}...</p>}
       <p>Choose a name:</p>
@@ -222,7 +246,13 @@ const Lobby = () => {
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <Button onClick={() => getUserId()}>Generate name</Button>
+      <Button
+        onClick={fetchGeneratedName}
+        className="flex justify-center items-center min-w-[100px]"
+        disabled={loading}
+      >
+        {loading ? "Generating name..." : "Generate"}
+      </Button>
 
       <div className="flex flex-row justify-center items-center gap-2">
         <Checkbox

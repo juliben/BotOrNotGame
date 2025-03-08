@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@radix-ui/react-label";
 import { Icons } from "@/components/ui/spinner";
+import axios from "axios";
 
 import { useNavigate } from "react-router-dom";
 import supabase from "../api/supabase";
@@ -211,26 +212,47 @@ const Lobby = () => {
     return () => clearInterval(countdownTimer);
   }, [waiting, navigate]);
 
-  const fetchGeneratedName = async () => {
+  const generateName = async () => {
     setLoading(true);
-    setError("");
-
     try {
-      const response = await fetch("http://localhost:3000/");
-      if (!response.ok) {
-        throw new Error("Failed to fetch name");
-      }
-
-      const data = await response.json();
-      // setName(data.name);
-      console.log("DATA:", data);
-      // console.log("Generated name:", data.name);
-    } catch (error) {
-      console.error("Error fetching name:", error);
-      setError("Error fetching name");
+      const response = await axios.get("http://localhost:3000/name");
+      console.log(response.data.name);
+      return response.data.name;
+    } catch {
+      console.log("Error generating name");
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFirstName = (input: string) => {
+    const prefixes = [
+      "Male Human Name:",
+      "Female Human Name:",
+      "Male Dwarf Name:",
+      "Female Dwarf Name:",
+      "Male Elf Name:",
+      "Female Elf Name:",
+      "Male Hobbit Name:",
+      "Female Hobbit Name:",
+      "Male Orc Name:",
+      "Female Orc Name:",
+      "Male Gnome Name:",
+      "Female Gnome Name:",
+    ];
+    let namePart = input;
+
+    prefixes.forEach((prefix) => {
+      if (namePart.startsWith(prefix)) {
+        namePart = namePart.replace(prefix, "").trim();
+      }
+    });
+    return namePart.split(" ")[0];
+  };
+
+  const handleGenerateName = async () => {
+    const generatedName = await generateName();
+    setName(getFirstName(generatedName));
   };
 
   return (
@@ -247,11 +269,11 @@ const Lobby = () => {
         onChange={(e) => setName(e.target.value)}
       />
       <Button
-        onClick={fetchGeneratedName}
-        className="flex justify-center items-center min-w-[100px]"
+        onClick={handleGenerateName}
+        className="flex justify-center items-center min-w-[120px]"
         disabled={loading}
       >
-        {loading ? "Generating name..." : "Generate"}
+        {loading ? "Generating..." : "Generate"}
       </Button>
 
       <div className="flex flex-row justify-center items-center gap-2">

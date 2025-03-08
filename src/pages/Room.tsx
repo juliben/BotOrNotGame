@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { send } from "process";
+import supabase from "../api/supabase";
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { AI_USER_ID } from "../../constants";
 
 const senderStyles = {
   "1": "self-end bg-[var(--chat-1)] text-foreground mr-2", // Right-aligned bubble for sender 1
@@ -16,6 +18,47 @@ const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const roomId = useParams().roomId;
+
+  useEffect(() => {
+    const addAIToRoom = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("rooms")
+          .select("players")
+          .eq("id", roomId)
+          .single();
+
+        if (error) {
+          console.log("Error querying room participants:", error);
+        }
+
+        // Check if the AI already is in the room
+        if (data?.players) {
+          const aiExists = data.players.includes(AI_USER_ID);
+          if (aiExists) {
+            console.log("AI already exists in room:", roomId);
+            return;
+          }
+        }
+
+        // If he's not, add him
+        const { error: updateError } = await supabase
+          .from("rooms")
+          .update({ players: [...data?.players, AI_USER_ID] })
+          .eq("id", roomId);
+
+        if (updateError) {
+          console.log("Error adding AI to room:", error);
+        } else {
+          console.log("AI added to room:", roomId);
+        }
+      } catch (error) {
+        console.log("Error adding AI to room:", error);
+      }
+    };
+    addAIToRoom();
+  }, []);
 
   const sendMessageToAi = async () => {
     if (input === "") return;
@@ -31,7 +74,6 @@ const Room = () => {
       });
 
       const data = await response.json();
-      console.log("data.message:", data.message);
 
       return data.message;
     } catch (error) {

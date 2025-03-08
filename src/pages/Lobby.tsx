@@ -42,7 +42,10 @@ const Lobby = () => {
 
       if (rooms.length > 0) {
         roomId = rooms[0].id;
-        const updatedPlayers = [...rooms[0].players, userId];
+
+        const updatedPlayers = rooms[0].players.includes(userId)
+          ? rooms[0].players
+          : [...rooms[0].players, userId];
 
         // Add player to 'players' column in 'rooms' table
         await supabase
@@ -120,6 +123,7 @@ const Lobby = () => {
     queryRooms();
   }, []);
 
+  // Subscribe to channel
   useEffect(() => {
     const fetchReadyPlayers = async () => {
       // Fetch the current count of ready players in the room
@@ -201,7 +205,7 @@ const Lobby = () => {
         setCount((prevCount) => {
           if (prevCount <= 1) {
             clearInterval(countdownTimer);
-            navigate("/room");
+            navigate("/room/" + roomId);
             return 0;
           }
           return prevCount - 1;

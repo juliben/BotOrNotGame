@@ -261,6 +261,7 @@ const Lobby = () => {
 
   return (
     <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20">
+      <p>Room: {roomId}</p>
       <p>Waiting for humans to be ready...{readyCount}/3</p>
       {waiting && <Icons.spinner className="h-4 w-4 animate-spin" />}
       {!waiting && <p>Starting in {count}...</p>}

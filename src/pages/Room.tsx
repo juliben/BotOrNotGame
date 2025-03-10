@@ -8,22 +8,47 @@ import { useParams } from "react-router-dom";
 import { AI_USER_ID } from "../../constants.ts";
 import axios from "axios";
 import { shuffle } from "lodash";
-import flipCoin from "../services/flipCoin.ts";
-
-const senderStyles = {
-  "1": "self-end bg-[var(--chat-1)] text-foreground mr-2", // Right-aligned bubble for sender 1
-  "2": "self-start bg-[var(--chat-2)] text-foreground ml-2", // Left-aligned bubble for sender 2
-  "3": "self-start bg-[var(--chat-3)] text-foreground ml-2", // Left-aligned bubble for sender 3
-  "4": "self-start bg-[var(--chat-4)] text-foreground ml-2", // Left-aligned bubble for sender 4
-};
 
 const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [playersNames, setPlayersNames] = useState([]);
+
+  // Array of names with corresponding userIds ({ game_name, user_id })
+  const [namesWithIds, setNamesWithIds] = useState([]);
+
   const roomId = useParams().roomId;
   const userId = localStorage.getItem("userId");
+
+  // Channel subscription
+  useEffect(() => {
+    console.log("Subscribing to channel");
+    const channel = supabase
+      .channel("messages_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          console.log("Received payload:" + payload.new);
+          const newMessage = {
+            sender: payload.new.sender_id,
+            message: payload.new.content,
+          };
+          console.log(newMessage);
+          setMessages((messages) => [...messages, newMessage]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("Unsubscribing from channel");
+      channel.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchParticipants = async () => {
@@ -38,9 +63,7 @@ const Room = () => {
         return;
       }
 
-      const participants = data.players;
-
-      if (participants[0] === userId) {
+      if (data.players[0] === userId) {
         console.log("I am the first participant");
         addAIToRoom();
       }
@@ -79,7 +102,10 @@ const Room = () => {
 
       console.log("updateData:", updateData);
       console.log("AI added to the room");
-      generateNameForAi();
+
+      await generateNameForAi();
+
+      fetchParticipantNames();
 
       // Randomize whether AI sends first message
       // I put it here so it's decided only from one place (instead of each player going thru this code)
@@ -94,14 +120,14 @@ const Room = () => {
             const response = await axios.get(
               "http://localhost:3000/first-message"
             );
-            console.log("First message from AI:", response.data.message);
-            const messageFromAi = response.data.message;
+            console.log("First message from AI:", response.data);
+            const messageFromAi = response.data;
 
             // Send that message to Supabase
 
             const { error } = await supabase
               .from("messages")
-              .insert({ sender: AI_USER_ID, message: messageFromAi });
+              .insert({ sender_id: AI_USER_ID, content: messageFromAi });
 
             if (error) {
               console.log(
@@ -121,51 +147,55 @@ const Room = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchParticipantNames = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("players")
-          .select("user_id, game_name")
-          .eq("room_id", roomId);
-        if (error) {
-          console.log("Error fetching participants from Supabase:", error);
-          return;
-        }
-
-        const humanPlayersNames = data.map((player) => player.game_name);
-
-        // Fetch AI name
-        const { data: aiName, error: aiNameError } = await supabase
-          .from("players")
-          .select("game_name")
-          .eq("user_id", AI_USER_ID)
-          .single();
-
-        if (aiNameError) {
-          console.log("Error fetching AI name:", aiNameError);
-          return;
-        }
-        const aiNamePart = getFirstName(aiName.game_name);
-        const allPlayersNames = [...humanPlayersNames, aiNamePart];
-        const shuffledPlayers = shuffle(allPlayersNames);
-        setPlayersNames(shuffledPlayers);
-      } catch (error) {
-        console.log("Error fetching participants names:", error);
+  // This is to be executed after AddAIToRoom function, inside
+  const fetchParticipantNames = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("players")
+        .select("user_id, game_name")
+        .eq("room_id", roomId);
+      if (error) {
+        console.log("Error fetching participants from Supabase:", error);
+        return;
       }
-    };
-    fetchParticipantNames();
-  }, [roomId]);
+
+      const humanPlayersNamesWithIds = data.map((player) => ({
+        game_name: player.game_name,
+        user_id: player.user_id,
+      }));
+      console.log(humanPlayersNamesWithIds);
+
+      // Fetch AI name
+      const { data: aiName, error: aiNameError } = await supabase
+        .from("players")
+        .select("game_name")
+        .eq("user_id", AI_USER_ID)
+        .single();
+
+      if (aiNameError) {
+        console.log("Error fetching AI name:", aiNameError);
+        return;
+      }
+
+      const AI_NAME_AND_ID = {
+        game_name: aiName.game_name,
+        user_id: AI_USER_ID,
+      };
+
+      const allPlayersNames = [...humanPlayersNamesWithIds, AI_NAME_AND_ID];
+      setNamesWithIds(allPlayersNames);
+    } catch (error) {
+      console.log("Error fetching participants names:", error);
+    }
+  };
 
   const generateNameForAi = async () => {
     try {
+      console.log("Generating name for AI...");
       const response = await axios.get("http://localhost:3000/name");
-      console.log("Name for AI:", response.data.name);
+
       const generatedName = response.data.name;
-
       const firstName = getFirstName(generatedName);
-
-      // Update AI's name in Supabase
 
       const { error } = await supabase
         .from("players")
@@ -175,6 +205,7 @@ const Room = () => {
       if (error) {
         console.log("Error updating AI's name in Supabase:", error);
       }
+      console.log("Updated AI's name in Supabase:" + firstName);
     } catch {
       console.log("Error generating name");
     }
@@ -202,6 +233,27 @@ const Room = () => {
       }
     });
     return namePart.split(" ")[0];
+  };
+
+  const getFirstMessageFromAi = async () => {
+    try {
+      console.log("Getting first message from AI");
+      const response = await axios.get("http://localhost:3000/first-message");
+      console.log("Response from AI:", response);
+      const messageFromAi = response.data;
+
+      // Send that message to Supabase
+
+      const { error } = await supabase
+        .from("messages")
+        .insert({ sender_id: AI_USER_ID, content: messageFromAi });
+
+      if (error) {
+        console.log("Error sending first message from AI to Supabase:", error);
+      }
+    } catch {
+      console.log("Error getting first message from AI");
+    }
   };
 
   const sendMessageToAi = async () => {
@@ -242,36 +294,45 @@ const Room = () => {
     setMessages(updatedMessagesFromAi);
   };
 
-  function formatNames(names) {
-    if (names.length === 0) return "";
-    if (names.length === 1) return names[0];
-    return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
-  }
+  const names = namesWithIds.map((player) => player.game_name);
+
+  // Correspond the shuffledNames indexes to the playerNameStyles
+  const shuffledNames = shuffle(names);
 
   const playerNameStyles = {
-    [playersNames[0]]: "text-[var(--chat-1)]",
-    [playersNames[1]]: "text-[var(--chat-2)]",
-    [playersNames[2]]: "text-[var(--chat-3)]",
-    [playersNames[3]]: "text-[var(--chat-4)]",
+    "0": "text-[var(--chat-1)]",
+    "1": "text-[var(--chat-2)]",
+    "2": "text-[var(--chat-3)]",
+    "3": "text-[var(--chat-4)]",
   };
 
-  console.log(playersNames);
+  const messageBubbleStyles = {
+    "0": "self-end bg-[var(--chat-1)] text-foreground mr-2", // Right-aligned bubble for sender 1
+    "1": "self-start bg-[var(--chat-2)] text-foreground ml-2", // Left-aligned bubble for sender 2
+    "2": "self-start bg-[var(--chat-3)] text-foreground ml-2", // Left-aligned bubble for sender 3
+    "3": "self-start bg-[var(--chat-4)] text-foreground ml-2", // Left-aligned bubble for sender 4
+  };
+
   return (
     <div className={"flex flex-col p-4 min-h-screen max-h-screen"}>
       <Card className={"flex-1 overflow-y-scroll mb-3"}>
-        <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
-          {playersNames.map((name, index) => (
-            <span key={name} className={`${playerNameStyles[name]} px-1`}>
-              {name}
-              {index < playersNames.length - 1 ? ", " : ""}
-            </span>
-          ))}{" "}
-          have joined the room.
-        </p>
+        {shuffledNames.length > 0 && (
+          <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
+            {shuffledNames.map((name, index) => (
+              <span key={name} className={`${playerNameStyles[index]} px-1`}>
+                {name}
+                {index < shuffledNames.length - 1 ? ", " : ""}
+              </span>
+            ))}{" "}
+            have joined the room.
+          </p>
+        )}
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`max-w-xs p-2 rounded-lg  ${senderStyles[msg.sender]}`}
+            className={`max-w-xs p-2 rounded-lg  ${
+              messageBubbleStyles[msg.sender]
+            }`}
           >
             {msg.message}
           </div>
@@ -284,6 +345,10 @@ const Room = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />{" "}
+        {/* <Button variant="secondary" onClick={() => console.log(namesWithIds)}> */}
+        <Button variant="secondary" onClick={fetchParticipantNames}>
+          Debug
+        </Button>
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>

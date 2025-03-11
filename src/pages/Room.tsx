@@ -23,7 +23,18 @@ const Room = () => {
   const [userId, setUserId] = useState(null);
   const roomId = useParams().roomId;
 
+  // For color purposes
   const playersMapRef = useRef([]);
+
+  // For scrolling to bottom on new messages
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    // Scroll to the bottom of the messages container
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   useEffect(() => {
     getUserId().then((id) => setUserId(id));
@@ -86,7 +97,7 @@ const Room = () => {
 
   useEffect(() => {
     fetchParticipants(roomId, userId);
-  }, [userId]);
+  }, []);
 
   const handleSendMessage = async () => {
     if (input === "") return;
@@ -145,7 +156,7 @@ const Room = () => {
 
   return (
     <div className={"flex flex-col p-4 min-h-screen max-h-screen"}>
-      <Card className={"flex-1 overflow-y-scroll mb-3"}>
+      <Card className={"flex-1 overflow-y-scroll mb-3 py-3 gap-3"}>
         {playersMapRef.current && (
           <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
             {shuffledNames.map((player, index) => (
@@ -164,14 +175,17 @@ const Room = () => {
           const senderNumber = playersMapRef.current[msg.sender];
 
           return (
-            <div
-              key={index}
-              className={`max-w-xs p-2 rounded-lg ${
-                msg.sender === userId ? "self-end" : "self-start"
-              } message-bubble ${messageBubbleStyles[senderNumber]}`}
-            >
-              {msg.message}
-            </div>
+            <>
+              <div
+                key={index}
+                className={`max-w-xs p-2 rounded-lg ${
+                  msg.sender === userId ? "self-end" : "self-start"
+                } message-bubble ${messageBubbleStyles[senderNumber]}`}
+              >
+                {msg.message}
+                <div ref={messagesEndRef} />
+              </div>
+            </>
           );
         })}
       </Card>

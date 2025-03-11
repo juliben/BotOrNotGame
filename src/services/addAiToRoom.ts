@@ -38,8 +38,8 @@ export const addAIToRoom = async (roomId: string) => {
 
     await generateNameForAi();
 
+    await assignNumbersToPlayers(roomId);
     fetchParticipantNames(roomId);
-    assignNumbersToPlayers(roomId);
 
     // Randomize whether AI sends first message
     // I put it here so it's decided only from one place (instead of each player going thru this code)

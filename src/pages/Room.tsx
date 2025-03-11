@@ -104,14 +104,22 @@ const Room = () => {
       const response = await axios.post("http://localhost:3000/", {
         messages,
       });
-      // console.log("Response from AI: " + response.data);
+
       console.log("Response from AI: " + response.data); // Log the JSON response);
-      const { error } = await supabase
-        .from("messages")
-        .insert({ sender_id: AI_USER_ID, content: response.data });
-      if (error) {
-        console.log("Error sending message to Supabase:", error);
-      }
+      console.log("Response length: " + response.data.length);
+      // Calculate delay duration according to message length, to simulate typing time
+      const delayDuration = response.data.length * 50;
+      console.log("Delay duration: " + delayDuration);
+
+      // Simulate delay and send response to supabase
+      setTimeout(async () => {
+        const { error } = await supabase
+          .from("messages")
+          .insert({ sender_id: AI_USER_ID, content: response.data });
+        if (error) {
+          console.log("Error sending message to Supabase:", error);
+        }
+      }, delayDuration);
     } catch (error) {
       console.log("Error sending message to AI:", error);
     }

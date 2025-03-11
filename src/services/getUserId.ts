@@ -8,8 +8,6 @@ export const getUserId = async () => {
       return { error };
     }
     if (data.user) {
-      await localStorage.setItem("userId", data.user.id);
-      console.log("Fetched user ID from Supabase:", data.user.id);
       return data.user.id;
     }
   } catch {

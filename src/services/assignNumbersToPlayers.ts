@@ -31,14 +31,4 @@ export const assignNumbersToPlayers = async (roomId: string) => {
   );
 
   await Promise.all(updatePromises);
-
-  // 5. Assign the remaining color to the AI player client-side.
-  // The AI player is not part of the room query, so we assign it manually.
-  const aiNumber = numbers[humanPlayers.length]; // humanPlayers.length is 3, so this is colors[3]
-
-  console.log("Assigned numbers:", numbers);
-  console.log(
-    "Human players updated with numbers, AI assigned number:",
-    aiNumber
-  );
 };

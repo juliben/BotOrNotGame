@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import supabase from "../api/supabase";
 import { shuffle } from "lodash";
+import { IoMdBug } from "react-icons/io";
 
 import { getUserId } from "@/services/getUserId.ts";
 import { fetchParticipants } from "@/services/fetchParticipants.ts";
@@ -14,71 +15,74 @@ const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+
   // Array of names with corresponding userIds ({ game_name, user_id })
   const [namesWithIds, setNamesWithIds] = useState([]);
+
   const [shuffledNames, setShuffledNames] = useState([]);
   const [userId, setUserId] = useState(null);
   const roomId = useParams().roomId;
+
+  const playersMapRef = useRef([]);
 
   useEffect(() => {
     getUserId().then((id) => setUserId(id));
   }, []);
 
-  // // Channel subscription
-  // useEffect(() => {
-  //   console.log("Subscribing to channel");
-  //   const channel = supabase
-  //     .channel("messages_changes")
-  //     .on(
-  //       "postgres_changes",
-  //       {
-  //         event: "INSERT",
-  //         schema: "public",
-  //         table: "messages",
-  //       },
-  //       (payload) => {
-  //         console.log("Received payload:" + payload.new);
-  //         const newMessage = {
-  //           sender: payload.new.sender_id,
-  //           message: payload.new.content,
-  //         };
-  //         console.log("New message:" + newMessage);
-  //         setMessages((messages) => [...messages, newMessage]);
+  // Channel subscription
+  useEffect(() => {
+    console.log("Subscribing to channel");
+    const channel = supabase
+      .channel("messages_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          const newMessage = {
+            sender: payload.new.sender_id,
+            message: payload.new.content,
+          };
+          console.log("Received payload message: " + newMessage.message);
+          setMessages((messages) => [...messages, newMessage]);
 
-  //         // Send messages to AI (with context)
-  //         // Do this to send only 1 request to the AI (instead of 1 per player)
-  //         if (namesWithIds[0].user_id === userId) {
-  //           const sendMessageToAi = async () => {
-  //             if (input === "") return;
+          // Send messages to AI (with context)
+          // Do this to send only 1 request to the AI (instead of 1 per player)
+          if (namesWithIds[0].user_id === userId) {
+            const sendMessageToAi = async () => {
+              if (input === "") return;
 
-  //             try {
-  //               const response = await fetch("http://localhost:3000/", {
-  //                 method: "POST",
-  //                 headers: {
-  //                   "Content-Type": "application/json",
-  //                 },
-  //                 body: JSON.stringify({ messages }),
-  //               });
+              try {
+                const response = await fetch("http://localhost:3000/", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ messages }),
+                });
 
-  //               const data = await response.json();
+                const data = await response.json();
 
-  //               return data.message;
-  //             } catch (error) {
-  //               console.error("Error fetching AI messages:", error);
-  //             }
-  //           };
+                return data.message;
+              } catch (error) {
+                console.error("Error fetching AI messages:", error);
+              }
+            };
 
-  //           sendMessageToAi();
-  //         }
-  //       }
-  //     )
-  //     .subscribe();
+            sendMessageToAi();
+          }
+        }
+      )
+      .subscribe();
 
-  //   return () => {
-  //     console.log("Unsubscribing from channel");
-  //     channel.unsubscribe();
-  //   };
-  // }, []);
+    return () => {
+      console.log("Unsubscribing from channel");
+      channel.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     fetchParticipants(roomId, userId);
@@ -86,11 +90,14 @@ const Room = () => {
 
   const handleSendMessage = async () => {
     if (input === "") return;
+    if (!userId) return;
 
     try {
-      const { error } = await supabase
-        .from("messages")
-        .insert({ sender_id: userId, content: input });
+      const { error } = await supabase.from("messages").insert({
+        sender_id: userId,
+        content: input,
+        // number: playersMapRef.current[userId],
+      });
       if (error) {
         console.log("Error sending message to Supabase:", error);
       }
@@ -100,51 +107,73 @@ const Room = () => {
     }
   };
 
-  const names = namesWithIds.map((player) => player.game_name);
+  useEffect(() => {
+    const fetchPlayerNamesAndIds = async () => {
+      const players = await fetchParticipantNames(roomId);
+      console.log("Players with name, id and number:", players);
+      setNamesWithIds(players);
+
+      if (!players) return;
+
+      playersMapRef.current = players.reduce((acc, player) => {
+        acc[player.user_id] = player.number;
+        return acc;
+      }, {});
+      console.log("Players map:", playersMapRef.current);
+    };
+    fetchPlayerNamesAndIds();
+  }, []);
 
   // Correspond the shuffledNames indexes to the playerNameStyles
   useEffect(() => {
-    setShuffledNames(shuffle(names));
+    setShuffledNames(namesWithIds);
   }, []);
 
   const playerNameStyles = {
-    "0": "text-[var(--chat-1)]",
-    "1": "text-[var(--chat-2)]",
-    "2": "text-[var(--chat-3)]",
-    "3": "text-[var(--chat-4)]",
+    1: "text-[var(--chat-1)]",
+    2: "text-[var(--chat-2)]",
+    3: "text-[var(--chat-3)]",
+    4: "text-[var(--chat-4)]",
   };
 
   const messageBubbleStyles = {
-    "0": "self-end bg-[var(--chat-1)] text-foreground mr-2", // Right-aligned bubble for sender 1
-    "1": "self-start bg-[var(--chat-2)] text-foreground ml-2", // Left-aligned bubble for sender 2
-    "2": "self-start bg-[var(--chat-3)] text-foreground ml-2", // Left-aligned bubble for sender 3
-    "3": "self-start bg-[var(--chat-4)] text-foreground ml-2", // Left-aligned bubble for sender 4
+    1: "bg-[var(--chat-1)] text-foreground mx-2", // Right-aligned bubble for sender 1
+    2: "bg-[var(--chat-2)] text-foreground mx-2", // Left-aligned bubble for sender 2
+    3: "bg-[var(--chat-3)] text-foreground mx-2", // Left-aligned bubble for sender 3
+    4: "bg-[var(--chat-4)] text-foreground mx-2", // Left-aligned bubble for sender 4
   };
 
   return (
     <div className={"flex flex-col p-4 min-h-screen max-h-screen"}>
       <Card className={"flex-1 overflow-y-scroll mb-3"}>
-        {shuffledNames.length > 0 && (
+        {playersMapRef.current && (
           <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
-            {shuffledNames.map((name, index) => (
-              <span key={name} className={`${playerNameStyles[index]} px-1`}>
-                {name}
+            {shuffledNames.map((player, index) => (
+              <span
+                key={player.user_id}
+                className={`${playerNameStyles[player.number]} px-1`}
+              >
+                {player.game_name}
                 {index < shuffledNames.length - 1 ? ", " : ""}
               </span>
             ))}{" "}
             have joined the room.
           </p>
         )}
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`max-w-xs p-2 rounded-lg  ${
-              messageBubbleStyles[msg.sender]
-            }`}
-          >
-            {msg.message}
-          </div>
-        ))}
+        {messages.map((msg, index) => {
+          const senderNumber = playersMapRef.current[msg.sender];
+
+          return (
+            <div
+              key={index}
+              className={`max-w-xs p-2 rounded-lg ${
+                msg.sender === userId ? "self-end" : "self-start"
+              } message-bubble ${messageBubbleStyles[senderNumber]}`}
+            >
+              {msg.message}
+            </div>
+          );
+        })}
       </Card>
 
       <div className={"flex gap-2 mt-auto"}>
@@ -153,9 +182,11 @@ const Room = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />{" "}
-        <Button variant="secondary" onClick={() => console.log(userId)} />
-        <Button variant="secondary" onClick={fetchParticipantNames}>
-          Debug
+        <Button
+          variant="secondary"
+          onClick={() => console.log(playersMapRef.current)}
+        >
+          <IoMdBug />
         </Button>
         <Button onClick={handleSendMessage} disabled={loading}>
           Send

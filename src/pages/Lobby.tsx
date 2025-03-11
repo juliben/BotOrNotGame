@@ -8,7 +8,7 @@ import axios from "axios";
 
 import { useNavigate } from "react-router-dom";
 import supabase from "../api/supabase";
-import { getUserId } from "../storage/localStorage";
+import { getUserId } from "@/services/getUserId";
 
 const Lobby = () => {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ const Lobby = () => {
   const [readyCount, setReadyCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const queryRooms = async () => {
@@ -123,7 +124,7 @@ const Lobby = () => {
     queryRooms();
   }, []);
 
-  // Subscribe to channel
+  // Subscribe to channel (ready players)
   useEffect(() => {
     const fetchReadyPlayers = async () => {
       // Fetch the current count of ready players in the room
@@ -157,6 +158,7 @@ const Lobby = () => {
             "to:",
             payload.new.ready
           );
+          // console.log("Payload", payload);
 
           // Re-fetch the ready count
           const { count, error } = await supabase
@@ -174,8 +176,13 @@ const Lobby = () => {
           }
         }
       )
+
       .subscribe();
-    console.log("Subscribed to real-time updates for room:", roomId);
+
+    console.log(
+      "Subscribed to real-time updates (ready players) for room:",
+      roomId
+    );
 
     // Cleanup subscription on unmount
     return () => {
@@ -259,6 +266,23 @@ const Lobby = () => {
     setName(getFirstName(generatedName));
   };
 
+  const handleDebug = async () => {
+    console.log("Refetching ready players...");
+    const { count, error } = await supabase
+      .from("players")
+      .select("*", { count: "exact" })
+      .eq("room_id", roomId)
+      .eq("ready", true);
+
+    if (!error) {
+      setReadyCount(count);
+
+      if (count === 3) {
+        setWaiting(false);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20">
       <p>Room: {roomId}</p>
@@ -273,6 +297,9 @@ const Lobby = () => {
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
+      <Button variant="secondary" onClick={handleDebug}>
+        Debug
+      </Button>
       <Button
         onClick={handleGenerateName}
         className="flex justify-center items-center min-w-[120px]"

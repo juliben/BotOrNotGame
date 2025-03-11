@@ -19,7 +19,6 @@ export const fetchParticipantNames = async (roomId: string) => {
       user_id: player.user_id,
       number: player.number,
     }));
-    console.log(humanPlayers);
 
     // Fetch AI name
     const { data: aiName, error: aiNameError } = await supabase

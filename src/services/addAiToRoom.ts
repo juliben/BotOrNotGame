@@ -3,6 +3,7 @@ import { AI_USER_ID } from "../../constants.ts";
 import { generateNameForAi } from "./generateNameForAi";
 import { fetchParticipantNames } from "./fetchParticipantNames";
 import axios from "axios";
+import { assignNumbersToPlayers } from "./assignNumbersToPlayers.ts";
 
 export const addAIToRoom = async (roomId: string) => {
   try {
@@ -38,6 +39,7 @@ export const addAIToRoom = async (roomId: string) => {
     await generateNameForAi();
 
     fetchParticipantNames(roomId);
+    assignNumbersToPlayers(roomId);
 
     // Randomize whether AI sends first message
     // I put it here so it's decided only from one place (instead of each player going thru this code)

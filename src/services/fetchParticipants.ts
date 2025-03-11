@@ -1,6 +1,5 @@
 import supabase from "../api/supabase";
 import { addAIToRoom } from "./addAiToRoom";
-import { assignNumbersToPlayers } from "./assignNumbersToPlayers";
 
 export const fetchParticipants = async (roomId: string, userId: string) => {
   const { data, error } = await supabase
@@ -17,6 +16,5 @@ export const fetchParticipants = async (roomId: string, userId: string) => {
   if (data.players[0] === userId) {
     console.log("I am the first participant");
     await addAIToRoom(roomId);
-    assignNumbersToPlayers(roomId);
   }
 };

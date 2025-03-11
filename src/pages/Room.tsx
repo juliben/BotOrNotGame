@@ -10,6 +10,8 @@ import { IoMdBug } from "react-icons/io";
 import { getUserId } from "@/services/getUserId.ts";
 import { fetchParticipants } from "@/services/fetchParticipants.ts";
 import { fetchParticipantNames } from "@/services/fetchParticipantNames.ts";
+import { AI_USER_ID } from "../../constants.ts";
+import axios from "axios";
 
 const Room = () => {
   const [input, setInput] = useState("");
@@ -22,9 +24,7 @@ const Room = () => {
   const [shuffledNames, setShuffledNames] = useState([]);
   const [userId, setUserId] = useState(null);
   const roomId = useParams().roomId;
-
-  // For color purposes
-  const playersMapRef = useRef([]);
+  const [playersMap, setPlayersMap] = useState({});
 
   // For scrolling to bottom on new messages
   const messagesEndRef = useRef(null);
@@ -55,36 +55,11 @@ const Room = () => {
         (payload) => {
           const newMessage = {
             sender: payload.new.sender_id,
+            sender_name: payload.new.game_name,
             message: payload.new.content,
           };
           console.log("Received payload message: " + newMessage.message);
           setMessages((messages) => [...messages, newMessage]);
-
-          // Send messages to AI (with context)
-          // Do this to send only 1 request to the AI (instead of 1 per player)
-          if (namesWithIds[0].user_id === userId) {
-            const sendMessageToAi = async () => {
-              if (input === "") return;
-
-              try {
-                const response = await fetch("http://localhost:3000/", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({ messages }),
-                });
-
-                const data = await response.json();
-
-                return data.message;
-              } catch (error) {
-                console.error("Error fetching AI messages:", error);
-              }
-            };
-
-            sendMessageToAi();
-          }
         }
       )
       .subscribe();
@@ -97,17 +72,22 @@ const Room = () => {
 
   useEffect(() => {
     fetchParticipants(roomId, userId);
-  }, []);
+  }, [roomId, userId]);
 
   const handleSendMessage = async () => {
     if (input === "") return;
     if (!userId) return;
 
+    const myUser = namesWithIds.find((name) => name.user_id === userId);
+    if (!myUser) return;
+
+    const myName = myUser.game_name;
+
     try {
       const { error } = await supabase.from("messages").insert({
         sender_id: userId,
         content: input,
-        // number: playersMapRef.current[userId],
+        game_name: myName,
       });
       if (error) {
         console.log("Error sending message to Supabase:", error);
@@ -118,26 +98,48 @@ const Room = () => {
     }
   };
 
+  const sendMessagesToAi = async () => {
+    console.log("Sending messages array to AI....");
+    try {
+      const response = await axios.post("http://localhost:3000/", {
+        messages,
+      });
+      // console.log("Response from AI: " + response.data);
+      console.log("Response from AI: " + response.data.message); // Log the JSON response);
+      const { error } = await supabase
+        .from("messages")
+        .insert({ sender_id: AI_USER_ID, content: response.data.message });
+      if (error) {
+        console.log("Error sending message to Supabase:", error);
+      }
+    } catch (error) {
+      console.log("Error sending message to AI:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchPlayerNamesAndIds = async () => {
       const players = await fetchParticipantNames(roomId);
       console.log("Players with name, id and number:", players);
-      setNamesWithIds(players);
 
-      if (!players) return;
-
-      playersMapRef.current = players.reduce((acc, player) => {
-        acc[player.user_id] = player.number;
-        return acc;
-      }, {});
-      console.log("Players map:", playersMapRef.current);
+      // Only update state if every player's number is set (non-null)
+      if (players.every((player) => player.number !== null)) {
+        setNamesWithIds(players);
+        setShuffledNames(shuffle(players));
+        const map = players.reduce((acc, player) => {
+          acc[player.user_id] = player.number;
+          return acc;
+        }, {});
+        setPlayersMap(map);
+        clearInterval(intervalId);
+      }
     };
-    fetchPlayerNamesAndIds();
-  }, []);
 
-  // Correspond the shuffledNames indexes to the playerNameStyles
-  useEffect(() => {
-    setShuffledNames(namesWithIds);
+    // Poll every 500 milliseconds
+    const intervalId = setInterval(fetchPlayerNamesAndIds, 500);
+
+    // Cleanup polling when component unmounts
+    return () => clearInterval(intervalId);
   }, []);
 
   const playerNameStyles = {
@@ -157,7 +159,7 @@ const Room = () => {
   return (
     <div className={"flex flex-col p-4 min-h-screen max-h-screen"}>
       <Card className={"flex-1 overflow-y-scroll mb-3 py-3 gap-3"}>
-        {playersMapRef.current && (
+        {playersMap[userId] && (
           <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
             {shuffledNames.map((player, index) => (
               <span
@@ -172,7 +174,7 @@ const Room = () => {
           </p>
         )}
         {messages.map((msg, index) => {
-          const senderNumber = playersMapRef.current[msg.sender];
+          const senderNumber = playersMap[msg.sender];
 
           return (
             <>
@@ -196,15 +198,13 @@ const Room = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />{" "}
-        <Button
-          variant="secondary"
-          onClick={() => console.log(playersMapRef.current)}
-        >
+        <Button variant="secondary" onClick={() => console.log(namesWithIds)}>
           <IoMdBug />
         </Button>
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>
+        <Button onClick={sendMessagesToAi}>AI</Button>
       </div>
     </div>
   );

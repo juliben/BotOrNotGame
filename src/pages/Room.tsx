@@ -5,21 +5,23 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import supabase from "../api/supabase";
 import { shuffle } from "lodash";
-import { IoMdBug } from "react-icons/io";
 
 import { getUserId } from "@/services/getUserId.ts";
 import { fetchParticipants } from "@/services/fetchParticipants.ts";
 import { fetchParticipantNames } from "@/services/fetchParticipantNames.ts";
 import { AI_USER_ID } from "../../constants.ts";
 import axios from "axios";
+import { BugIcon } from "lucide-react";
 
 const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  const [isVoting, setIsVoting] = useState(true);
+  const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10);
+
+  const [displayWinner, setDisplayWinner] = useState(false);
 
   // Array of names with corresponding userIds ({ game_name, user_id })
   const [namesWithIds, setNamesWithIds] = useState([]);
@@ -60,6 +62,7 @@ const Room = () => {
             sender: payload.new.sender_id,
             sender_name: payload.new.game_name,
             message: payload.new.content,
+            is_vote: payload.new.is_vote,
           };
           console.log("Received payload message: " + newMessage.message);
           setMessages((messages) => [...messages, newMessage]);
@@ -117,13 +120,15 @@ const Room = () => {
       console.log("Response from AI: " + response.data);
 
       // Split the response string into sentences.
-      let sentences = response.data.split(/(?<=[.?!])\s+/);
-      sentences = sentences.filter((sentence) => sentence.trim().length > 0);
+      let sentences = response.data.split(/(?<=[.?!"])\s+/);
+      sentences = sentences
+        .filter((sentence) => sentence.trim().length > 0)
+        .map((sentence) => sentence.trim().replace(/[.¿¡!]$/, ""));
 
       // Process each sentence sequentially.
       for (const sentence of sentences) {
         // Calculate the delay for this sentence (e.g., 50ms per character)
-        const sentenceDelay = sentence.length * 50;
+        const sentenceDelay = sentence.length * 100;
         console.log(
           `Waiting ${sentenceDelay}ms before sending sentence: "${sentence}"`
         );
@@ -157,26 +162,59 @@ const Room = () => {
         setIsVoting(false);
       }
       setIsVoting(false);
-      fetchVotes();
+      await sendMyVoteAsMessage(voted);
+      await fetchAllVotes();
     } catch (error) {
       console.log("Error sending vote:", error);
     }
   };
 
-  const fetchVotes = async () => {
+  const fetchAllVotes = async () => {
     try {
       const { data, error } = await supabase
         .from("players")
-        .select("user_id, voted_for")
+        .select("game_name, voted_for")
         .eq("room_id", roomId);
 
       if (error) {
         console.log("Error fetching votes from Supabase:", error);
       }
-      console.log("Voting data: " + JSON.stringify(data));
-      return data;
+
+      console.log("Votes data:");
+      const voteCounts = data.reduce((acc, player) => {
+        acc[player.voted_for] = (acc[player.voted_for] || 0) + 1;
+        return acc;
+      }, {});
+
+      console.log("Vote counts:", voteCounts);
+      return voteCounts;
     } catch (error) {
       console.log("Error fetching votes:", error);
+    }
+  };
+
+  const sendMyVoteAsMessage = async (voted) => {
+    const myName = namesWithIds.find(
+      (name) => name.user_id === userId
+    )?.game_name;
+    if (!myName) return;
+
+    const hisName = namesWithIds.find(
+      (name) => name.user_id === voted
+    )?.game_name;
+    if (!hisName) return;
+
+    try {
+      const { error } = await supabase.from("messages").insert({
+        sender_id: userId,
+        content: `${myName} voted for ${hisName}`,
+        is_vote: true,
+      });
+      if (error) {
+        console.log("Error sending vote message to Supabase:", error);
+      }
+    } catch (error) {
+      console.log("Error sending vote message:", error);
     }
   };
 
@@ -209,6 +247,13 @@ const Room = () => {
     2: "text-[#66FF66] font-medium", // Light green for player 2
     3: "text-[#FF6666] font-medium", // Light red for player 3
     4: "text-[#CC99CC] font-medium", // Light purple for player 4
+  };
+
+  const playerVoteStyles = {
+    1: "text-[#0066CC] font-medium", // Light blue for player 1
+    2: "text-[#006600] font-medium", // Light green for player 2
+    3: "text-[#990000] font-medium", // Light red for player 3
+    4: "text-[#660066] font-medium", // Light purple for player 4
   };
 
   const messageBubbleStyles = {
@@ -246,14 +291,20 @@ const Room = () => {
             <>
               <div
                 key={index}
-                className={`max-w-xs p-2 rounded-lg ${
+                className={`${
                   msg.sender === userId ? "self-end" : "self-start"
-                } message-bubble ${messageBubbleStyles[senderNumber]}`}
+                } ${
+                  msg.is_vote
+                    ? `${playerVoteStyles[senderNumber]}`
+                    : `message-bubble ${messageBubbleStyles[senderNumber]}`
+                } max-w-xs p-2 rounded-lg  `}
               >
                 <div className={"flex flex-col "}>
-                  <p className={`${playerNameStyles[senderNumber]}`}>
-                    ~{msg.sender_name}
-                  </p>
+                  {!msg.is_vote && (
+                    <p className={`${playerNameStyles[senderNumber]}`}>
+                      ~{msg.sender_name}
+                    </p>
+                  )}
                   <p>{msg.message}</p>
                 </div>
                 <div ref={messagesEndRef} />
@@ -273,6 +324,9 @@ const Room = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />{" "}
+        <Button onClick={() => setIsVoting(!isVoting)} disabled={loading}>
+          <BugIcon />
+        </Button>
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>

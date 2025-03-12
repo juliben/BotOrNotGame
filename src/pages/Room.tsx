@@ -146,6 +146,22 @@ const Room = () => {
     }
   };
 
+  const handleVote = async (voted) => {
+    try {
+      const { error } = await supabase
+        .from("players")
+        .update({ voted_for: voted })
+        .eq("user_id", userId);
+      if (error) {
+        console.log("Error sending vote to Supabase:", error);
+      }
+    } catch (error) {
+      console.log("Error sending vote:", error);
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
   useEffect(() => {
     const fetchPlayerNamesAndIds = async () => {
       const players = await fetchParticipantNames(roomId);
@@ -258,10 +274,10 @@ const Room = () => {
                     className={`${playerNameStyles[player.number]} ${
                       messageBubbleStyles[player.number]
                     } px-10 min-w-45`}
+                    onClick={() => handleVote(player.user_id)}
                   >
                     {player.game_name}
                   </Button>
-                  <p>1 vote</p>
                 </div>
               ))}
             </div>

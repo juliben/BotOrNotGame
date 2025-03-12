@@ -21,7 +21,7 @@ const Room = () => {
   const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10);
 
-  const [displayWinner, setDisplayWinner] = useState(false);
+  const [mostVoted, setMostVoted] = useState(null);
 
   // Array of names with corresponding userIds ({ game_name, user_id })
   const [namesWithIds, setNamesWithIds] = useState([]);
@@ -180,14 +180,26 @@ const Room = () => {
         console.log("Error fetching votes from Supabase:", error);
       }
 
-      console.log("Votes data:");
-      const voteCounts = data.reduce((acc, player) => {
+      const votesCount = data.reduce((acc, player) => {
         acc[player.voted_for] = (acc[player.voted_for] || 0) + 1;
         return acc;
       }, {});
 
-      console.log("Vote counts:", voteCounts);
-      return voteCounts;
+      const mostVoted = Object.entries(votesCount).reduce(
+        (max, [candidate, count]) => {
+          return count > max.count ? { candidate, count } : max;
+        },
+        { candidate: null, count: 0 }
+      ).candidate;
+
+      console.log("Vote counts:", votesCount);
+
+      const mostVotedPlayer = namesWithIds.find(
+        (player) => player.user_id === mostVoted
+      );
+
+      console.log("Most voted:", mostVotedPlayer.game_name);
+      return votesCount;
     } catch (error) {
       console.log("Error fetching votes:", error);
     }

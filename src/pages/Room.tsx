@@ -97,25 +97,79 @@ const Room = () => {
       console.log("Error sending message:", error);
     }
   };
+  // Utility function to return a promise that resolves after a given delay.
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const sendMessagesToAi = async () => {
+    const aiUser = namesWithIds.find((name) => name.user_id === AI_USER_ID);
+    if (!aiUser) return;
+    const aiName = aiUser.game_name;
+
     console.log("Sending messages array to AI....");
     try {
-      const response = await axios.post("http://localhost:3000/", {
+      const response = await axios.post("http://localhost:3000/spanish", {
         messages,
       });
+
+      console.log("Response from AI: " + response.data);
+
+      // Split the response string into sentences.
+      let sentences = response.data.split(/(?<=[.?!])\s+/);
+      sentences = sentences.filter((sentence) => sentence.trim().length > 0);
+
+      // Process each sentence sequentially.
+      for (const sentence of sentences) {
+        // Calculate the delay for this sentence (e.g., 50ms per character)
+        const sentenceDelay = sentence.length * 50;
+        console.log(
+          `Waiting ${sentenceDelay}ms before sending sentence: "${sentence}"`
+        );
+
+        // Wait for the delay.
+        await delay(sentenceDelay);
+
+        // Now insert the sentence.
+        const { error } = await supabase.from("messages").insert({
+          sender_id: AI_USER_ID,
+          content: sentence,
+          game_name: aiName,
+        });
+        if (error) {
+          console.log("Error sending sentence to Supabase:", error);
+        }
+      }
+    } catch (error) {
+      console.log("Error sending message to AI:", error);
+    }
+  };
+
+  const aiAskQuestion = async () => {
+    const aiUser = namesWithIds.find((name) => name.user_id === AI_USER_ID);
+    if (!aiUser) return;
+    const aiName = aiUser.game_name;
+
+    console.log("Requesting question from AI....");
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/ask-question-spanish",
+        {
+          messages,
+        }
+      );
 
       console.log("Response from AI: " + response.data); // Log the JSON response);
       console.log("Response length: " + response.data.length);
       // Calculate delay duration according to message length, to simulate typing time
-      const delayDuration = response.data.length * 50;
+      const delayDuration = response.data.length * 100;
       console.log("Delay duration: " + delayDuration);
 
       // Simulate delay and send response to supabase
       setTimeout(async () => {
-        const { error } = await supabase
-          .from("messages")
-          .insert({ sender_id: AI_USER_ID, content: response.data });
+        const { error } = await supabase.from("messages").insert({
+          sender_id: AI_USER_ID,
+          content: response.data,
+          game_name: aiName,
+        });
         if (error) {
           console.log("Error sending message to Supabase:", error);
         }
@@ -151,17 +205,17 @@ const Room = () => {
   }, []);
 
   const playerNameStyles = {
-    1: "text-[var(--chat-1)]",
-    2: "text-[var(--chat-2)]",
-    3: "text-[var(--chat-3)]",
-    4: "text-[var(--chat-4)]",
+    1: "text-[#99CCFF] font-medium", // Light blue for player 1
+    2: "text-[#66FF66] font-medium", // Light green for player 2
+    3: "text-[#FF6666] font-medium", // Light red for player 3
+    4: "text-[#CC99CC] font-medium", // Light purple for player 4
   };
 
   const messageBubbleStyles = {
-    1: "bg-[var(--chat-1)] text-foreground mx-2", // Right-aligned bubble for sender 1
-    2: "bg-[var(--chat-2)] text-foreground mx-2", // Left-aligned bubble for sender 2
-    3: "bg-[var(--chat-3)] text-foreground mx-2", // Left-aligned bubble for sender 3
-    4: "bg-[var(--chat-4)] text-foreground mx-2", // Left-aligned bubble for sender 4
+    1: "bg-[#0066CC] text-white mx-2", // Dark blue for player 1
+    2: "bg-[#006600] text-white mx-2", // Dark green for player 2
+    3: "bg-[#990000] text-white mx-2", // Dark red for player 3
+    4: "bg-[#660066] text-white mx-2", // Dark purple for player 4
   };
 
   return (
@@ -192,7 +246,12 @@ const Room = () => {
                   msg.sender === userId ? "self-end" : "self-start"
                 } message-bubble ${messageBubbleStyles[senderNumber]}`}
               >
-                {msg.message}
+                <div className={"flex flex-col "}>
+                  <p className={`${playerNameStyles[senderNumber]}`}>
+                    ~{msg.sender_name}
+                  </p>
+                  <p>{msg.message}</p>
+                </div>
                 <div ref={messagesEndRef} />
               </div>
             </>
@@ -206,7 +265,7 @@ const Room = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />{" "}
-        <Button variant="secondary" onClick={() => console.log(namesWithIds)}>
+        <Button variant="secondary" onClick={aiAskQuestion}>
           <IoMdBug />
         </Button>
         <Button onClick={handleSendMessage} disabled={loading}>

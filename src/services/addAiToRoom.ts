@@ -36,7 +36,7 @@ export const addAIToRoom = async (roomId: string) => {
 
     console.log("AI added to the room, player:", updateData[0].players);
 
-    await generateNameForAi();
+    const AI_NAME = await generateNameForAi();
 
     await assignNumbersToPlayers(roomId);
     await fetchParticipantNames(roomId);
@@ -61,7 +61,11 @@ export const addAIToRoom = async (roomId: string) => {
 
           const { error } = await supabase
             .from("messages")
-            .insert({ sender_id: AI_USER_ID, content: messageFromAi });
+            .insert({
+              sender_id: AI_USER_ID,
+              content: messageFromAi,
+              game_name: AI_NAME,
+            });
 
           if (error) {
             console.log(

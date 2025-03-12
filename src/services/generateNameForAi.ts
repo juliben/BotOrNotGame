@@ -19,7 +19,7 @@ export const generateNameForAi = async () => {
     if (error) {
       console.log("Error updating AI's name in Supabase:", error);
     }
-    console.log("Updated AI's name in Supabase:" + firstName);
+    return firstName;
   } catch {
     console.log("Error generating name");
   }

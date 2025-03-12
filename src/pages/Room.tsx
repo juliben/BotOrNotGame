@@ -17,6 +17,9 @@ const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [isVoting, setIsVoting] = useState(true);
+  const [votingCountdown, setVotingCountdown] = useState(10);
 
   // Array of names with corresponding userIds ({ game_name, user_id })
   const [namesWithIds, setNamesWithIds] = useState([]);
@@ -143,46 +146,9 @@ const Room = () => {
     }
   };
 
-  const aiAskQuestion = async () => {
-    const aiUser = namesWithIds.find((name) => name.user_id === AI_USER_ID);
-    if (!aiUser) return;
-    const aiName = aiUser.game_name;
-
-    console.log("Requesting question from AI....");
-    try {
-      const response = await axios.post(
-        "http://localhost:3000/ask-question-spanish",
-        {
-          messages,
-        }
-      );
-
-      console.log("Response from AI: " + response.data); // Log the JSON response);
-      console.log("Response length: " + response.data.length);
-      // Calculate delay duration according to message length, to simulate typing time
-      const delayDuration = response.data.length * 100;
-      console.log("Delay duration: " + delayDuration);
-
-      // Simulate delay and send response to supabase
-      setTimeout(async () => {
-        const { error } = await supabase.from("messages").insert({
-          sender_id: AI_USER_ID,
-          content: response.data,
-          game_name: aiName,
-        });
-        if (error) {
-          console.log("Error sending message to Supabase:", error);
-        }
-      }, delayDuration);
-    } catch (error) {
-      console.log("Error sending message to AI:", error);
-    }
-  };
-
   useEffect(() => {
     const fetchPlayerNamesAndIds = async () => {
       const players = await fetchParticipantNames(roomId);
-      console.log("Players with name, id and number:", players);
 
       // Only update state if every player's number is set (non-null)
       if (players.every((player) => player.number !== null)) {
@@ -219,60 +185,89 @@ const Room = () => {
   };
 
   return (
-    <div className={"flex flex-col p-4 min-h-screen max-h-screen"}>
-      <Card className={"flex-1 overflow-y-scroll mb-3 py-3 gap-3"}>
-        {playersMap[userId] && (
-          <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
-            {shuffledNames.map((player, index) => (
-              <span
-                key={player.user_id}
-                className={`${playerNameStyles[player.number]} px-1`}
-              >
-                {player.game_name}
-                {index < shuffledNames.length - 1 ? ", " : ""}
-              </span>
-            ))}{" "}
-            have joined the room.
-          </p>
-        )}
-        {messages.map((msg, index) => {
-          const senderNumber = playersMap[msg.sender];
+    <div className={`flex flex-col p-4 min-h-screen max-h-screen `}>
+      <div className={`${isVoting ? " blur-xs pointer-events-none" : ""}`}>
+        <Card className={"flex-1 overflow-y-scroll mb-3 py-3 gap-3"}>
+          {playersMap[userId] && (
+            <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
+              {shuffledNames.map((player, index) => (
+                <span
+                  key={player.user_id}
+                  className={`${playerNameStyles[player.number]} px-1`}
+                >
+                  {player.game_name}
+                  {index < shuffledNames.length - 1 ? ", " : ""}
+                </span>
+              ))}{" "}
+              have joined the room.
+            </p>
+          )}
+          {messages.map((msg, index) => {
+            const senderNumber = playersMap[msg.sender];
 
-          return (
-            <>
-              <div
-                key={index}
-                className={`max-w-xs p-2 rounded-lg ${
-                  msg.sender === userId ? "self-end" : "self-start"
-                } message-bubble ${messageBubbleStyles[senderNumber]}`}
-              >
-                <div className={"flex flex-col "}>
-                  <p className={`${playerNameStyles[senderNumber]}`}>
-                    ~{msg.sender_name}
-                  </p>
-                  <p>{msg.message}</p>
+            return (
+              <>
+                <div
+                  key={index}
+                  className={`max-w-xs p-2 rounded-lg ${
+                    msg.sender === userId ? "self-end" : "self-start"
+                  } message-bubble ${messageBubbleStyles[senderNumber]}`}
+                >
+                  <div className={"flex flex-col "}>
+                    <p className={`${playerNameStyles[senderNumber]}`}>
+                      ~{msg.sender_name}
+                    </p>
+                    <p>{msg.message}</p>
+                  </div>
+                  <div ref={messagesEndRef} />
                 </div>
-                <div ref={messagesEndRef} />
-              </div>
-            </>
-          );
-        })}
-      </Card>
+              </>
+            );
+          })}
+        </Card>
+      </div>
 
-      <div className={"flex gap-2 mt-auto"}>
+      <div
+        className={`flex gap-2 mt-auto ${
+          isVoting ? " blur-xs pointer-events-none" : ""
+        }`}
+      >
         <Input
           placeholder="Type a message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />{" "}
-        <Button variant="secondary" onClick={aiAskQuestion}>
-          <IoMdBug />
-        </Button>
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>
         <Button onClick={sendMessagesToAi}>AI</Button>
       </div>
+
+      {isVoting && (
+        <div className="fixed inset-0 flex items-center justify-center ">
+          <Card className="p-4 m-4 w-full max-w-md border-black border border-dotted rounded-lg text-foreground">
+            <p className="text-center text-red-400">{votingCountdown}</p>
+            <h1 className="text-center text-xl font-bold ">Who is the AI?</h1>
+            <div className="flex flex-col space-y-4 mb-4 justify-center items-center">
+              {shuffledNames.map((player) => (
+                <div
+                  key={player.user_id}
+                  className="flex row items-center gap-5 "
+                >
+                  <Button
+                    className={`${playerNameStyles[player.number]} ${
+                      messageBubbleStyles[player.number]
+                    } px-10 min-w-45`}
+                  >
+                    {player.game_name}
+                  </Button>
+                  <p>1 vote</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

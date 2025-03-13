@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { signInAnonymously } from "@/api/supabaseAuth";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const Homepage = () => {
   const navigate = useNavigate();
@@ -19,6 +20,10 @@ const Homepage = () => {
 
   return (
     <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20">
+      <p className="absolute top-5 left-5 ">Online: 1</p>
+      <div className="absolute top-5 right-5">
+        <ThemeToggle />
+      </div>
       <p>3 humans, 1 AI.</p>
       <p>If the AI is voted out, all humans win.</p>
       <p>If a human is voted out, that human alone wins.</p>

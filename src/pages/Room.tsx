@@ -198,7 +198,7 @@ const Room = () => {
         (player) => player.user_id === mostVoted
       );
 
-      console.log("Most voted:", mostVotedPlayer.game_name);
+      console.log("Most voted:", mostVotedPlayer);
       return votesCount;
     } catch (error) {
       console.log("Error fetching votes:", error);

@@ -17,9 +17,11 @@ const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(10000);
   const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10);
+  const [winner, setWinner] = useState(null);
+  const [votes, setVotes] = useState([]);
 
   const [mostVoted, setMostVoted] = useState(null);
 
@@ -80,7 +82,56 @@ const Room = () => {
     getUserId().then((id) => setUserId(id));
   }, []);
 
-  // Channel subscription
+  // Vote channel subscription
+
+  // useEffect(() => {
+  //   console.log("Subscribing to vote channel");
+  //   const subscription = supabase
+  // .from(`players:room_id=eq.${roomId}`)
+  //     .on("UPDATE", (payload) => {
+  //       console.log("Vote updated:", payload);
+  //       // processVotes();
+  //     })
+  //     .on("INSERT", (payload) => {
+  //       console.log("Vote inserted:", payload);
+  //       // processVotes();
+  //     })
+  //     .subscribe();
+
+  //   return () => {
+  //     supabase.removeSubscription(subscription);
+  //   };
+  // });
+
+  // Vote channel subscription
+  useEffect(() => {
+    console.log("Subscribing to vote channel");
+    const channel = supabase
+      .channel("vote_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "players",
+        },
+        (payload) => {
+          const vote = {
+            vote: payload.new.voted_for,
+          };
+          console.log("Received payload vote: " + vote.vote);
+          setVotes((votes) => [...votes, vote]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("Unsubscribing from vote channel");
+      channel.unsubscribe();
+    };
+  }, []);
+
+  // Messages channel subscription
   useEffect(() => {
     console.log("Subscribing to channel");
     const channel = supabase
@@ -198,45 +249,8 @@ const Room = () => {
       }
       setIsVoting(false);
       await sendMyVoteAsMessage(voted);
-      await fetchAllVotes();
     } catch (error) {
       console.log("Error sending vote:", error);
-    }
-  };
-
-  const fetchAllVotes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("players")
-        .select("game_name, voted_for")
-        .eq("room_id", roomId);
-
-      if (error) {
-        console.log("Error fetching votes from Supabase:", error);
-      }
-
-      const votesCount = data.reduce((acc, player) => {
-        acc[player.voted_for] = (acc[player.voted_for] || 0) + 1;
-        return acc;
-      }, {});
-
-      const mostVoted = Object.entries(votesCount).reduce(
-        (max, [candidate, count]) => {
-          return count > max.count ? { candidate, count } : max;
-        },
-        { candidate: null, count: 0 }
-      ).candidate;
-
-      console.log("Vote counts:", votesCount);
-
-      const mostVotedPlayer = namesWithIds.find(
-        (player) => player.user_id === mostVoted
-      );
-
-      console.log("Most voted:", mostVotedPlayer);
-      return votesCount;
-    } catch (error) {
-      console.log("Error fetching votes:", error);
     }
   };
 
@@ -289,6 +303,75 @@ const Room = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  const countVotes = (votes) =>
+    votes.reduce((acc, { vote }) => {
+      // Assuming vote is the candidate's user_id
+      return { ...acc, [vote]: (acc[vote] || 0) + 1 };
+    }, {});
+
+  const processVotes = () => {
+    const voteCounts = countVotes(votes);
+
+    // Filter out any count for the AI.
+    const humanVoteCounts = Object.entries(voteCounts)
+      .filter(([candidateId]) => candidateId !== AI_USER_ID)
+      .reduce(
+        (acc, [candidateId, count]) => ({ ...acc, [candidateId]: count }),
+        {}
+      );
+
+    // If no human votes have been cast, you might decide that the humans win by default.
+    if (!Object.keys(humanVoteCounts).length) {
+      console.log("No human votes received. AI wins by default.");
+      return;
+    }
+
+    // 3. Determine the highest count among human candidates.
+    const maxHumanVotes = Math.max(...Object.values(humanVoteCounts));
+
+    // Get all human candidate IDs that reached the highest count.
+    const topHumanCandidates = Object.entries(humanVoteCounts)
+      .filter(([id, count]) => count === maxHumanVotes)
+      .map(([id]) => id);
+
+    // Choose one candidate randomly if there's a tie.
+    const candidateToVoteFor =
+      topHumanCandidates.length > 1
+        ? topHumanCandidates[
+            Math.floor(Math.random() * topHumanCandidates.length)
+          ]
+        : topHumanCandidates[0];
+
+    // 4. Retrieve candidate info and cast the AI's vote.
+    const mostVotedPlayer = namesWithIds.find(
+      (player) => player.user_id === candidateToVoteFor
+    );
+
+    const aiPlayer = namesWithIds.find(
+      (player) => player.user_id === AI_USER_ID
+    );
+
+    if (!mostVotedPlayer || !aiPlayer) {
+      console.log("Could not determine the candidate or AI player.");
+      return;
+    }
+
+    console.log("AI will vote for:", mostVotedPlayer.game_name);
+    console.log("Winner decided by AI vote: ", mostVotedPlayer.game_name);
+    setWinner(mostVotedPlayer.game_name);
+
+    // Append the AI's vote as a message.
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      {
+        sender: AI_USER_ID,
+        sender_name: aiPlayer.game_name,
+        message: `${aiPlayer.game_name} voted for ${mostVotedPlayer.game_name}`,
+        is_vote: true,
+      },
+    ]);
+  };
+
   const playerNameStyles = {
     1: "text-[#99CCFF] font-medium", // Light blue for player 1
     2: "text-[#66FF66] font-medium", // Light green for player 2
@@ -312,6 +395,7 @@ const Room = () => {
 
   return (
     <div className={`flex flex-col p-4 min-h-screen max-h-screen `}>
+      <p>Winner: {winner}</p>
       <p
         className={`self-end mb-3  ${
           countdown > 30 ? "text-foreground" : "text-red-500"
@@ -378,7 +462,10 @@ const Room = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />{" "}
-        <Button onClick={() => setIsVoting(!isVoting)} disabled={loading}>
+        <Button onClick={() => console.log(votes)} disabled={loading}>
+          Votes
+        </Button>
+        <Button onClick={processVotes} disabled={loading}>
           <BugIcon />
         </Button>
         <Button onClick={handleSendMessage} disabled={loading}>

@@ -17,7 +17,7 @@ const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(5);
   const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10);
 
@@ -40,6 +40,41 @@ const Room = () => {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // Counter to trigger voting
+  useEffect(() => {
+    const counter = setInterval(() => {
+      if (countdown > 0) {
+        setCountdown((prev) => {
+          if (prev <= 0) {
+            clearInterval(counter);
+            setIsVoting(true);
+            startVotingCountdown();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(counter);
+  }, []);
+
+  // Callback function for voting countdown
+  const startVotingCountdown = () => {
+    const counter = setInterval(() => {
+      if (votingCountdown > 0) {
+        setVotingCountdown((prev) => {
+          if (prev <= 0) {
+            clearInterval(counter);
+            setIsVoting(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
+    }, 1000);
+  };
 
   useEffect(() => {
     getUserId().then((id) => setUserId(id));
@@ -277,6 +312,13 @@ const Room = () => {
 
   return (
     <div className={`flex flex-col p-4 min-h-screen max-h-screen `}>
+      <p
+        className={`self-end mb-3  ${
+          countdown > 30 ? "text-foreground" : "text-red-500"
+        }`}
+      >
+        {countdown}
+      </p>
       <Card
         className={`flex-1 overflow-y-scroll mb-3 py-3 gap-3 ${
           isVoting ? " blur-xs pointer-events-none" : ""

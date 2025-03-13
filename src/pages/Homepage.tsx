@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { signInAnonymously } from "@/api/supabaseAuth";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme-toggle";
+import supabase from "@/api/supabase";
+import { useEffect } from "react";
 
 const Homepage = () => {
   const navigate = useNavigate();
@@ -17,6 +19,30 @@ const Homepage = () => {
       // Handle error
     }
   };
+
+  // Subscribe to online updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("players_db_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "players",
+        },
+        (payload) => {
+          console.log("Change received:", payload);
+        }
+      )
+      .subscribe((status) => {
+        console.log("Channel status:", status);
+      });
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, []);
 
   return (
     <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20">
@@ -41,6 +67,20 @@ const Homepage = () => {
       <Button variant="outline" className="w-fit">
         LEADERBOARD
       </Button>
+      {/* <Button
+        variant="ghost"
+        className={"absolute bottom-5 right-5 flex row  items-center gap-1"}
+        onClick={() => {
+          if (language === "en") {
+            setLanguage("es");
+          } else {
+            setLanguage("en");
+          }
+        }}
+      >
+        ESPAÑOL
+        <FaLongArrowAltRight />
+      </Button> */}
     </div>
   );
 };

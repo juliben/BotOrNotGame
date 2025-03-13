@@ -21,7 +21,35 @@ const Lobby = () => {
   const [readyCount, setReadyCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    let pingInterval;
+
+    const startPinging = async () => {
+      const userId = await getUserId();
+
+      const ping = async () => {
+        const { error } = await supabase
+          .from("players")
+          .update({ last_seen: new Date().toISOString(), is_online: true })
+          .eq("id", userId);
+        if (error) {
+          console.error("Error pinging online status:", error);
+        }
+      };
+
+      // Send initial ping
+      ping();
+
+      // Send a ping every 30 seconds
+      pingInterval = setInterval(ping, 30000);
+    };
+
+    startPinging();
+    return () => {
+      if (pingInterval) clearInterval(pingInterval);
+    };
+  }, []);
 
   useEffect(() => {
     const queryRooms = async () => {

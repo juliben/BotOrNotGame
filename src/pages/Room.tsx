@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import supabase from "../api/supabase";
 import { shuffle } from "lodash";
+import flipCoin from "@/services/flipCoin.ts";
 
 import { getUserId } from "@/services/getUserId.ts";
 import { fetchParticipants } from "@/services/fetchParticipants.ts";
@@ -208,6 +209,7 @@ const Room = () => {
             sender_name: payload.new.game_name,
             message: payload.new.content,
             is_vote: payload.new.is_vote,
+            is_from_server: payload.new.is_from_server,
           };
           console.log("Received payload message: " + newMessage.message);
           setMessages((messages) => [...messages, newMessage]);
@@ -265,11 +267,23 @@ const Room = () => {
 
       console.log("Response from AI: " + response.data);
 
-      // Split the response string into sentences.
-      let sentences = response.data.split(/(?<=[.?!"])\s+/);
-      sentences = sentences
-        .filter((sentence) => sentence.trim().length > 0)
-        .map((sentence) => sentence.trim().replace(/[.¿¡!]$/, ""));
+      /// Split the response string into sentences.
+      let initialSentences = response.data.split(/(?<=[.?!"])\s+/);
+
+      let sentences = initialSentences.flatMap((sentence) => {
+        // Clean up each sentence.
+        sentence = sentence.trim().replace(/[.¿¡!]$/, "");
+
+        // Use your flipCoin() function to decide if further splitting should occur.
+        if (flipCoin()) {
+          return sentence
+            .split(/(\b(?:haha|jaja)\b)/gi)
+            .map((part) => part.trim())
+            .filter((part) => part.length > 0);
+        } else {
+          return [sentence];
+        }
+      });
 
       // Process each sentence sequentially.
       for (const sentence of sentences) {
@@ -447,11 +461,13 @@ const Room = () => {
               } ${
                 msg.is_vote
                   ? `${playerVoteStyles[senderNumber]}`
+                  : msg.is_from_server
+                  ? "bg-gray-200 text-gray-800 self-center text-center mx-auto"
                   : `message-bubble ${messageBubbleStyles[senderNumber]}`
               } max-w-xs p-2 rounded-lg  `}
             >
               <div className={"flex flex-col "}>
-                {!msg.is_vote && (
+                {!msg.is_vote && !msg.is_from_server && (
                   <p className={`${playerNameStyles[senderNumber]}`}>
                     ~{msg.sender_name}
                   </p>

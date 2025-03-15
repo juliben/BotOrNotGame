@@ -27,6 +27,7 @@ const Room = () => {
 
   const votesTimerRef = useRef(null);
   const namesWithIdsRef = useRef(null);
+  const winnerRef = useRef(null);
 
   // Array of names with corresponding userIds ({ game_name, user_id })
   const [namesWithIds, setNamesWithIds] = useState([]);
@@ -139,6 +140,9 @@ const Room = () => {
           const vote = {
             vote: payload.new.voted_for,
           };
+          if (winnerRef.current) {
+            return;
+          }
           console.log("Received payload vote: " + vote.vote);
           setVotes((prevVotes) => {
             const updatedVotes = [...prevVotes, vote];
@@ -152,6 +156,7 @@ const Room = () => {
                 updatedVotes,
                 namesWithIdsRef.current
               );
+              winnerRef.current = winner;
               setWinner(winner);
             }
             return updatedVotes;
@@ -376,7 +381,7 @@ const Room = () => {
 
   return (
     <div className={`flex flex-col p-4 min-h-screen max-h-screen `}>
-      <p>Winner: {winner}</p>
+      {winner && <p>Winner: {winner.game_name}</p>}
       <p
         className={`self-end mb-3  ${
           countdown > 30 ? "text-foreground" : "text-red-500"
@@ -444,7 +449,7 @@ const Room = () => {
         <Button onClick={() => console.log(votes)} disabled={loading}>
           Votes
         </Button>
-        <Button onClick={processVotes} disabled={loading}>
+        <Button onClick={() => setIsVoting(true)} disabled={loading}>
           <BugIcon />
         </Button>
         <Button onClick={handleSendMessage} disabled={loading}>

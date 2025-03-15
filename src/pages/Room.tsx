@@ -28,6 +28,7 @@ const Room = () => {
   const votesTimerRef = useRef(null);
   const namesWithIdsRef = useRef(null);
   const winnerRef = useRef(null);
+  const votersRef = useRef([]);
 
   // Array of names with corresponding userIds ({ game_name, user_id })
   const [namesWithIds, setNamesWithIds] = useState([]);
@@ -123,7 +124,7 @@ const Room = () => {
 
   // Vote channel subscription
   useEffect(() => {
-    console.log("Subscribing to vote channel");
+    console.log("Subscribing to vote channel for roomId:", roomId);
     const channel = supabase
       .channel("vote_changes")
       .on(
@@ -132,29 +133,41 @@ const Room = () => {
           event: "UPDATE",
           schema: "public",
           table: "players",
+          filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          if (payload.new.voted_for === null) {
+          if (payload.new.voted_for === null || payload.new.room_id != roomId) {
             return;
           }
-          const vote = {
-            vote: payload.new.voted_for,
-          };
           if (winnerRef.current) {
             return;
           }
+
+          const vote = {
+            vote: payload.new.voted_for,
+          };
+          const voter = payload.new.user_id;
+
+          // Check if it is a duplicate vote
+
+          if (votersRef.current === null) {
+            votersRef.current = [];
+          }
+          if (votersRef.current.includes(voter)) {
+            return;
+          }
+
+          votersRef.current = [...votersRef.current, voter];
+
           console.log("Received payload vote: " + vote.vote);
           setVotes((prevVotes) => {
             const updatedVotes = [...prevVotes, vote];
             if (updatedVotes.length >= 3) {
               clearInterval(votesTimerRef.current);
-              console.log(
-                "namesWithIds in the room: ",
-                namesWithIdsRef.current
-              );
               const winner = processVotes(
                 updatedVotes,
-                namesWithIdsRef.current
+                namesWithIdsRef.current,
+                roomId
               );
               winnerRef.current = winner;
               setWinner(winner);
@@ -182,6 +195,7 @@ const Room = () => {
           event: "INSERT",
           schema: "public",
           table: "messages",
+          filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
           // Non-strict comparison (otherwise it doesn't work)
@@ -357,6 +371,20 @@ const Room = () => {
       console.log("Voting time ended (timeout reached).");
       const winner = processVotes(votes, namesWithIds);
       setWinner(winner);
+
+      // Add the AI's vote to the messages array (not in Supabase)
+      const aiName = namesWithIds.find(
+        (name) => name.user_id === AI_USER_ID
+      )?.game_name;
+      if (!aiName) return;
+
+      const newAiMessage = {
+        sender_id: AI_USER_ID,
+        content: `${aiName} voted for ${winner.game_name}`,
+        room_id: roomId,
+        is_vote: true,
+      };
+      setMessages((prevMessages) => [...prevMessages, newAiMessage]);
     }, 12000);
   };
 

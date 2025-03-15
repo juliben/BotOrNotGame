@@ -45,7 +45,7 @@ export const addAIToRoom = async (roomId: string) => {
     // I put it here so it's decided only from one place (instead of each player going thru this code)
 
     // const coinFlip = flipCoin();
-    const coinFlip = true;
+    const coinFlip = false;
     console.log("Coin flip:", coinFlip);
     if (coinFlip) {
       const getFirstMessageFromAi = async () => {
@@ -59,13 +59,11 @@ export const addAIToRoom = async (roomId: string) => {
 
           // Send that message to Supabase
 
-          const { error } = await supabase
-            .from("messages")
-            .insert({
-              sender_id: AI_USER_ID,
-              content: messageFromAi,
-              game_name: AI_NAME,
-            });
+          const { error } = await supabase.from("messages").insert({
+            sender_id: AI_USER_ID,
+            content: messageFromAi,
+            game_name: AI_NAME,
+          });
 
           if (error) {
             console.log(

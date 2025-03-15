@@ -9,6 +9,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import supabase from "../api/supabase";
 import { getUserId } from "@/services/getUserId";
+import { ping } from "@/services/ping";
 
 const Lobby = () => {
   const navigate = useNavigate();
@@ -21,25 +22,27 @@ const Lobby = () => {
   const [readyCount, setReadyCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     let pingInterval;
 
+    if (!userId) {
+      getUserId().then((id) => {
+        setUserId(id);
+      });
+    }
+    if (userId === null) {
+      console.log("Ping: User ID not found");
+      return;
+    }
+    console.log("Attempting to start pinging, userId:", userId);
+
     const startPinging = async () => {
-      const userId = await getUserId();
-
-      const ping = async () => {
-        const { error } = await supabase
-          .from("players")
-          .update({ last_seen: new Date().toISOString(), is_online: true })
-          .eq("id", userId);
-        if (error) {
-          console.error("Error pinging online status:", error);
-        }
-      };
-
       // Send initial ping
-      ping();
+      ping(userId);
+
+      console.log("Now pinging");
 
       // Send a ping every 30 seconds
       pingInterval = setInterval(ping, 30000);
@@ -49,7 +52,7 @@ const Lobby = () => {
     return () => {
       if (pingInterval) clearInterval(pingInterval);
     };
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     const queryRooms = async () => {
@@ -86,7 +89,6 @@ const Lobby = () => {
         setRoomId(roomId);
 
         // Change room full status to true if there are 3 players
-
         if (updatedPlayers.length === 3) {
           const { error: updateFullError } = await supabase
             .from("rooms")
@@ -100,6 +102,7 @@ const Lobby = () => {
         }
 
         /// Update 'room_id' in the players table for the current user, with the current room id
+        console.log("Now updating player roomId:", roomId);
         const { error: playerRoomIdError } = await supabase
           .from("players")
           .update({ room_id: roomId })
@@ -148,19 +151,24 @@ const Lobby = () => {
         }
       }
     };
-
     queryRooms();
   }, []);
 
+  useEffect(() => {}, []);
+
   // Subscribe to channel (ready players)
   useEffect(() => {
+    if (!roomId) {
+      return;
+    }
     const fetchReadyPlayers = async () => {
       // Fetch the current count of ready players in the room
       const { count, error } = await supabase
         .from("players")
         .select("*", { count: "exact" })
         .eq("room_id", roomId)
-        .eq("ready", true);
+        .eq("is_ready", true)
+        .eq("is_online", true);
 
       if (!error) setReadyCount(count);
       console.log("Ready count:", count);
@@ -170,7 +178,7 @@ const Lobby = () => {
 
     // Subscribe to real-time updates
     const channel = supabase
-      .channel(`room-${roomId}-ready`)
+      .channel(`room-${roomId}-is_ready`)
       .on(
         "postgres_changes",
         {
@@ -180,12 +188,6 @@ const Lobby = () => {
           filter: `room_id=eq.${roomId}`,
         },
         async (payload) => {
-          console.log(
-            "Ready status changed for user: ",
-            payload.new.user_id,
-            "to:",
-            payload.new.ready
-          );
           // console.log("Payload", payload);
 
           // Re-fetch the ready count
@@ -193,7 +195,8 @@ const Lobby = () => {
             .from("players")
             .select("*", { count: "exact" })
             .eq("room_id", roomId)
-            .eq("ready", true);
+            .eq("is_ready", true)
+            .eq("is_online", true);
 
           if (!error) {
             setReadyCount(count);
@@ -223,12 +226,12 @@ const Lobby = () => {
 
     const { error } = await supabase
       .from("players")
-      .update([{ ready: !ready, game_name: name }])
+      .update([{ is_ready: !ready, game_name: name }])
       .eq("user_id", userId);
     if (error) {
       console.log("Error updating player:", error);
     }
-    console.log("Set ready to:", !ready);
+    console.log("Set ready state to:", !ready);
     setReady(!ready);
   };
 
@@ -300,7 +303,7 @@ const Lobby = () => {
       .from("players")
       .select("*", { count: "exact" })
       .eq("room_id", roomId)
-      .eq("ready", true);
+      .eq("is_ready", true);
 
     if (!error) {
       setReadyCount(count);
@@ -325,9 +328,9 @@ const Lobby = () => {
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <Button variant="secondary" onClick={handleDebug}>
+      {/* <Button variant="secondary" onClick={handleDebug}>
         Debug
-      </Button>
+      </Button> */}
       <Button
         onClick={handleGenerateName}
         className="flex justify-center items-center min-w-[120px]"

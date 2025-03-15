@@ -12,55 +12,92 @@ import { fetchParticipantNames } from "@/services/fetchParticipantNames.ts";
 import { AI_USER_ID } from "../../constants.ts";
 import axios from "axios";
 import { BugIcon } from "lucide-react";
+import { ping } from "@/services/ping.ts";
+import { processVotes } from "@/services/processVotes.ts";
 
 const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(10000);
+  const [countdown, setCountdown] = useState(100000);
   const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10);
   const [winner, setWinner] = useState(null);
   const [votes, setVotes] = useState([]);
 
-  const [mostVoted, setMostVoted] = useState(null);
+  const votesTimerRef = useRef(null);
+  const namesWithIdsRef = useRef(null);
 
   // Array of names with corresponding userIds ({ game_name, user_id })
   const [namesWithIds, setNamesWithIds] = useState([]);
 
   const [shuffledNames, setShuffledNames] = useState([]);
-  const [userId, setUserId] = useState(null);
   const roomId = useParams().roomId;
   const [playersMap, setPlayersMap] = useState({});
+  const [userId, setUserId] = useState(null);
+
+  // Start pinging (online status)
+  useEffect(() => {
+    let pingInterval;
+
+    if (!userId) {
+      getUserId().then((id) => {
+        setUserId(id);
+      });
+    }
+    if (userId === null) {
+      console.log("Ping: User ID not found");
+      return;
+    }
+    console.log("Attempting to start pinging, userId:", userId);
+
+    const startPinging = async () => {
+      // Send initial ping
+      ping(userId);
+
+      console.log("Now pinging");
+
+      // Send a ping every 30 seconds
+      pingInterval = setInterval(() => ping(userId), 30000);
+    };
+
+    startPinging();
+    return () => {
+      if (pingInterval) clearInterval(pingInterval);
+    };
+  }, [userId]);
 
   // For scrolling to bottom on new messages
   const messagesEndRef = useRef(null);
 
+  // Scroll to the bottom of the messages container
   useEffect(() => {
-    // Scroll to the bottom of the messages container
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
   // Counter to trigger voting
-  useEffect(() => {
-    const counter = setInterval(() => {
-      if (countdown > 0) {
-        setCountdown((prev) => {
-          if (prev <= 0) {
-            clearInterval(counter);
-            setIsVoting(true);
-            startVotingCountdown();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }
-    }, 1000);
+  // useEffect(() => {
+  //   const counter = setInterval(() => {
+  //     if (countdown > 0) {
+  //       setCountdown((prev) => {
+  //         if (prev <= 0) {
+  //           clearInterval(counter);
+  //           setIsVoting(true);
+  //           startVotingCountdown();
 
-    return () => clearInterval(counter);
-  }, []);
+  //           // // This is the timer to count the votes after 12 seconds. It should be cleared in the votes channel subscription if enough votes are counted before the timeout
+  //           // startVotingTimer();
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }
+  //   }, 1000);
+
+  //   return () => clearInterval(counter);
+  // }, []);
 
   // Callback function for voting countdown
   const startVotingCountdown = () => {
@@ -78,30 +115,10 @@ const Room = () => {
     }, 1000);
   };
 
+  // Get user ID
   useEffect(() => {
     getUserId().then((id) => setUserId(id));
   }, []);
-
-  // Vote channel subscription
-
-  // useEffect(() => {
-  //   console.log("Subscribing to vote channel");
-  //   const subscription = supabase
-  // .from(`players:room_id=eq.${roomId}`)
-  //     .on("UPDATE", (payload) => {
-  //       console.log("Vote updated:", payload);
-  //       // processVotes();
-  //     })
-  //     .on("INSERT", (payload) => {
-  //       console.log("Vote inserted:", payload);
-  //       // processVotes();
-  //     })
-  //     .subscribe();
-
-  //   return () => {
-  //     supabase.removeSubscription(subscription);
-  //   };
-  // });
 
   // Vote channel subscription
   useEffect(() => {
@@ -116,11 +133,29 @@ const Room = () => {
           table: "players",
         },
         (payload) => {
+          if (payload.new.voted_for === null) {
+            return;
+          }
           const vote = {
             vote: payload.new.voted_for,
           };
           console.log("Received payload vote: " + vote.vote);
-          setVotes((votes) => [...votes, vote]);
+          setVotes((prevVotes) => {
+            const updatedVotes = [...prevVotes, vote];
+            if (updatedVotes.length >= 3) {
+              clearInterval(votesTimerRef.current);
+              console.log(
+                "namesWithIds in the room: ",
+                namesWithIdsRef.current
+              );
+              const winner = processVotes(
+                updatedVotes,
+                namesWithIdsRef.current
+              );
+              setWinner(winner);
+            }
+            return updatedVotes;
+          });
         }
       )
       .subscribe();
@@ -133,7 +168,7 @@ const Room = () => {
 
   // Messages channel subscription
   useEffect(() => {
-    console.log("Subscribing to channel");
+    console.log("Subscribing to messages channel, roomId: " + roomId);
     const channel = supabase
       .channel("messages_changes")
       .on(
@@ -144,6 +179,11 @@ const Room = () => {
           table: "messages",
         },
         (payload) => {
+          // Non-strict comparison (otherwise it doesn't work)
+          if (payload.new.room_id != roomId) {
+            return;
+          }
+
           const newMessage = {
             sender: payload.new.sender_id,
             sender_name: payload.new.game_name,
@@ -160,7 +200,7 @@ const Room = () => {
       console.log("Unsubscribing from channel");
       channel.unsubscribe();
     };
-  }, []);
+  }, [roomId]);
 
   useEffect(() => {
     fetchParticipants(roomId, userId);
@@ -178,6 +218,7 @@ const Room = () => {
     try {
       const { error } = await supabase.from("messages").insert({
         sender_id: userId,
+        room_id: roomId,
         content: input,
         game_name: myName,
       });
@@ -227,6 +268,7 @@ const Room = () => {
           sender_id: AI_USER_ID,
           content: sentence,
           game_name: aiName,
+          room_id: roomId,
         });
         if (error) {
           console.log("Error sending sentence to Supabase:", error);
@@ -269,6 +311,7 @@ const Room = () => {
       const { error } = await supabase.from("messages").insert({
         sender_id: userId,
         content: `${myName} voted for ${hisName}`,
+        room_id: roomId,
         is_vote: true,
       });
       if (error) {
@@ -285,6 +328,7 @@ const Room = () => {
 
       // Only update state if every player's number is set (non-null)
       if (players.every((player) => player.number !== null)) {
+        namesWithIdsRef.current = players;
         setNamesWithIds(players);
         setShuffledNames(shuffle(players));
         const map = players.reduce((acc, player) => {
@@ -303,73 +347,12 @@ const Room = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  const countVotes = (votes) =>
-    votes.reduce((acc, { vote }) => {
-      // Assuming vote is the candidate's user_id
-      return { ...acc, [vote]: (acc[vote] || 0) + 1 };
-    }, {});
-
-  const processVotes = () => {
-    const voteCounts = countVotes(votes);
-
-    // Filter out any count for the AI.
-    const humanVoteCounts = Object.entries(voteCounts)
-      .filter(([candidateId]) => candidateId !== AI_USER_ID)
-      .reduce(
-        (acc, [candidateId, count]) => ({ ...acc, [candidateId]: count }),
-        {}
-      );
-
-    // If no human votes have been cast, you might decide that the humans win by default.
-    if (!Object.keys(humanVoteCounts).length) {
-      console.log("No human votes received. AI wins by default.");
-      return;
-    }
-
-    // 3. Determine the highest count among human candidates.
-    const maxHumanVotes = Math.max(...Object.values(humanVoteCounts));
-
-    // Get all human candidate IDs that reached the highest count.
-    const topHumanCandidates = Object.entries(humanVoteCounts)
-      .filter(([id, count]) => count === maxHumanVotes)
-      .map(([id]) => id);
-
-    // Choose one candidate randomly if there's a tie.
-    const candidateToVoteFor =
-      topHumanCandidates.length > 1
-        ? topHumanCandidates[
-            Math.floor(Math.random() * topHumanCandidates.length)
-          ]
-        : topHumanCandidates[0];
-
-    // 4. Retrieve candidate info and cast the AI's vote.
-    const mostVotedPlayer = namesWithIds.find(
-      (player) => player.user_id === candidateToVoteFor
-    );
-
-    const aiPlayer = namesWithIds.find(
-      (player) => player.user_id === AI_USER_ID
-    );
-
-    if (!mostVotedPlayer || !aiPlayer) {
-      console.log("Could not determine the candidate or AI player.");
-      return;
-    }
-
-    console.log("AI will vote for:", mostVotedPlayer.game_name);
-    console.log("Winner decided by AI vote: ", mostVotedPlayer.game_name);
-    setWinner(mostVotedPlayer.game_name);
-
-    // Append the AI's vote as a message.
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      {
-        sender: AI_USER_ID,
-        sender_name: aiPlayer.game_name,
-        message: `${aiPlayer.game_name} voted for ${mostVotedPlayer.game_name}`,
-        is_vote: true,
-      },
-    ]);
+  const startVotingTimer = () => {
+    votesTimerRef.current = setTimeout(() => {
+      console.log("Voting time ended (timeout reached).");
+      const winner = processVotes(votes, namesWithIds);
+      setWinner(winner);
+    }, 12000);
   };
 
   const playerNameStyles = {
@@ -378,14 +361,12 @@ const Room = () => {
     3: "text-[#FF6666] font-medium", // Light red for player 3
     4: "text-[#CC99CC] font-medium", // Light purple for player 4
   };
-
   const playerVoteStyles = {
     1: "text-[#0066CC] font-medium", // Light blue for player 1
     2: "text-[#006600] font-medium", // Light green for player 2
     3: "text-[#990000] font-medium", // Light red for player 3
     4: "text-[#660066] font-medium", // Light purple for player 4
   };
-
   const messageBubbleStyles = {
     1: "bg-[#0066CC] text-white mx-2", // Dark blue for player 1
     2: "bg-[#006600] text-white mx-2", // Dark green for player 2
@@ -426,28 +407,26 @@ const Room = () => {
           const senderNumber = playersMap[msg.sender];
 
           return (
-            <>
-              <div
-                key={index}
-                className={`${
-                  msg.sender === userId ? "self-end" : "self-start"
-                } ${
-                  msg.is_vote
-                    ? `${playerVoteStyles[senderNumber]}`
-                    : `message-bubble ${messageBubbleStyles[senderNumber]}`
-                } max-w-xs p-2 rounded-lg  `}
-              >
-                <div className={"flex flex-col "}>
-                  {!msg.is_vote && (
-                    <p className={`${playerNameStyles[senderNumber]}`}>
-                      ~{msg.sender_name}
-                    </p>
-                  )}
-                  <p>{msg.message}</p>
-                </div>
-                <div ref={messagesEndRef} />
+            <div
+              key={index}
+              className={`${
+                msg.sender === userId ? "self-end" : "self-start"
+              } ${
+                msg.is_vote
+                  ? `${playerVoteStyles[senderNumber]}`
+                  : `message-bubble ${messageBubbleStyles[senderNumber]}`
+              } max-w-xs p-2 rounded-lg  `}
+            >
+              <div className={"flex flex-col "}>
+                {!msg.is_vote && (
+                  <p className={`${playerNameStyles[senderNumber]}`}>
+                    ~{msg.sender_name}
+                  </p>
+                )}
+                <p>{msg.message}</p>
               </div>
-            </>
+              <div ref={messagesEndRef} />
+            </div>
           );
         })}
       </Card>

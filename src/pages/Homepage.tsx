@@ -3,10 +3,11 @@ import { signInAnonymously } from "@/api/supabaseAuth";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme-toggle";
 import supabase from "@/api/supabase";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const Homepage = () => {
   const navigate = useNavigate();
+  const [onlinePlayers, setOnlinePlayers] = useState(0);
 
   const handleSignInAnonymously = async () => {
     try {
@@ -20,33 +21,39 @@ const Homepage = () => {
     }
   };
 
-  // Subscribe to online updates
+  // Initial fetch of # of online players
   useEffect(() => {
-    const channel = supabase
-      .channel("players_db_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "players",
-        },
-        (payload) => {
-          console.log("Change received:", payload);
-        }
-      )
-      .subscribe((status) => {
-        console.log("Channel status:", status);
-      });
+    console.log("Fetching online players...");
+    fetchOnlinePlayers();
 
-    return () => {
-      channel.unsubscribe();
-    };
+    const interval = setInterval(() => {
+      fetchOnlinePlayers();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchOnlinePlayers = async () => {
+    const { data, error } = await supabase
+      .from("players")
+      .select("is_online")
+      .eq("is_online", true);
+    if (error) {
+      console.error("Error fetching online players:", error);
+    } else {
+      console.log("Online players:", data.length - 1);
+    }
+
+    if (!data) {
+      return;
+    }
+    // (Minus 1 because 1 is the AI)
+    setOnlinePlayers(data.length - 1);
+  };
 
   return (
     <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20">
-      <p className="absolute top-5 left-5 ">Online: 1</p>
+      <p className="absolute top-5 left-5 ">Online: {onlinePlayers}</p>
       <div className="absolute top-5 right-5">
         <ThemeToggle />
       </div>
@@ -61,10 +68,10 @@ const Homepage = () => {
       >
         PLAY AS A GUEST
       </Button>
-      <Button variant="secondary" className="w-fit">
+      <Button variant="secondary" className="w-fit" disabled>
         SIGN IN / REGISTER
       </Button>
-      <Button variant="outline" className="w-fit">
+      <Button variant="outline" className="w-fit" disabled>
         LEADERBOARD
       </Button>
       {/* <Button

@@ -268,6 +268,8 @@ const Room = () => {
       console.log(typeof response);
       console.log(response);
 
+      console.log("Should respond?: " + response.data.shouldRespond);
+      console.log("Confidence: " + response.data.confidence);
       const isAppropriate =
         response.data.shouldRespond === true && response.data.confidence >= 0.7;
 
@@ -283,12 +285,12 @@ const Room = () => {
         sentence = sentence
           .trim()
           .replace(/[¿¡]/g, "") // remove all ¿ and ¡ characters
-          .replace(/[.?!"]$/, ""); // then remove trailing punctuation if needed
+          .replace(/[.!"]$/, ""); // then remove trailing punctuation if needed
 
         // 50% chance of 'haha' or 'jaja' sent in a different message
         if (flipCoin()) {
           return sentence
-            .split(/(\b(?:haha|jaja)\b)/gi)
+            .split(/(\b(?:haha|jaja)\b)(?=\s*$)/gi)
             .map((part) => part.trim())
             .filter((part) => part.length > 0);
         } else {
@@ -517,7 +519,7 @@ const Room = () => {
         <div className="fixed inset-0 flex items-center justify-center ">
           <Card className="p-4 m-4 w-full max-w-md border-black border border-dotted rounded-lg text-foreground">
             <p className="text-center text-red-400">{votingCountdown}</p>
-            <h1 className="text-center text-xl font-bold ">Who is the AI?</h1>
+            <h1 className="text-center text-xl font-bold ">Who's the bot?</h1>
             <div className="flex flex-col space-y-4 mb-4 justify-center items-center">
               {shuffledNames.map((player) =>
                 player.user_id === userId ? null : (

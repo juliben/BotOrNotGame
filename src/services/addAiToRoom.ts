@@ -4,6 +4,7 @@ import { generateNameForAi } from "./generateNameForAi";
 import { fetchParticipantNames } from "./fetchParticipantNames";
 import axios from "axios";
 import { assignNumbersToPlayers } from "./assignNumbersToPlayers.ts";
+import flipCoin from "./flipCoin.ts";
 
 export const addAIToRoom = async (roomId: string) => {
   try {
@@ -44,8 +45,8 @@ export const addAIToRoom = async (roomId: string) => {
     // Randomize whether AI sends first message
     // I put it here so it's decided only from one place (instead of each player going thru this code)
 
-    // const coinFlip = flipCoin();
-    const coinFlip = false;
+    const coinFlip = flipCoin();
+    // const coinFlip = false;
     console.log("Coin flip:", coinFlip);
     if (coinFlip) {
       const getFirstMessageFromAi = async () => {

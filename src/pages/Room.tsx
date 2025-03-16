@@ -265,16 +265,27 @@ const Room = () => {
         messages,
       });
 
-      console.log("Response from AI: " + response.data);
+      console.log(typeof response);
+      console.log(response);
 
-      /// Split the response string into sentences.
-      let initialSentences = response.data.split(/(?<=[.?!"])\s+/);
+      const isAppropriate =
+        response.data.shouldRespond === true && response.data.confidence >= 0.7;
+
+      if (!isAppropriate) {
+        console.log("AI response is not appropriate, skipping...");
+        return;
+      }
+      /// Split the response into sentences to appear more human
+      let initialSentences = response.data.response.split(/(?<=[.?!"])\s+/);
 
       let sentences = initialSentences.flatMap((sentence) => {
-        // Clean up each sentence.
-        sentence = sentence.trim().replace(/[.¿¡!]$/, "");
+        // More casual spelling
+        sentence = sentence
+          .trim()
+          .replace(/[¿¡]/g, "") // remove all ¿ and ¡ characters
+          .replace(/[.?!"]$/, ""); // then remove trailing punctuation if needed
 
-        // Use your flipCoin() function to decide if further splitting should occur.
+        // 50% chance of 'haha' or 'jaja' sent in a different message
         if (flipCoin()) {
           return sentence
             .split(/(\b(?:haha|jaja)\b)/gi)

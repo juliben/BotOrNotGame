@@ -1,11 +1,40 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import Homepage from "./pages/Homepage";
 import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
 import LanguageProvider from "./context/LanguageContext";
 import { ThemeProvider } from "./context/theme-provider";
 import ChooseName from "./pages/ChooseName";
+import TestScreen from "./pages/test";
+import { motion, AnimatePresence } from "motion/react";
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route
+          path="/"
+          element={
+            <motion.div exit={{ opacity: 0 }} transition={{ duration: 0.7 }}>
+              <Homepage />
+            </motion.div>
+          }
+        />
+        <Route path="/choose-name" element={<ChooseName />} />
+        <Route path="/lobby" element={<Lobby />} />
+        <Route path="/room/:roomId" element={<Room />} />
+        <Route path="/test" element={<TestScreen />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 const App = () => {
   return (
@@ -13,12 +42,7 @@ const App = () => {
       <LanguageProvider>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
           <Router>
-            <Routes>
-              <Route path="/" element={<Homepage />} />
-              <Route path="/choose-name" element={<ChooseName />} />
-              <Route path="/lobby" element={<Lobby />} />
-              <Route path="/room/:roomId" element={<Room />} />
-            </Routes>
+            <AnimatedRoutes />
           </Router>
         </ThemeProvider>
       </LanguageProvider>

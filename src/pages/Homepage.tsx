@@ -1,25 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { signInAnonymously } from "@/api/supabaseAuth";
+
 import { useNavigate } from "react-router-dom";
-import { ThemeToggle } from "@/components/theme-toggle";
 import supabase from "@/api/supabase";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 
 const Homepage = () => {
   const navigate = useNavigate();
   const [onlinePlayers, setOnlinePlayers] = useState(0);
 
   const handleSignInAnonymously = async () => {
-    try {
-      const userId = await signInAnonymously();
-      console.log("User ID:", userId);
-      localStorage.setItem("userId", userId);
-      navigate("/choose-name");
-    } catch (error) {
-      console.error("Authentication failed:", error);
-      // Handle error
-    }
+    navigate("/test");
   };
 
   // Initial fetch of # of online players
@@ -53,77 +44,76 @@ const Homepage = () => {
   };
 
   return (
-    <AnimatePresence>
-      <div className="flex flex-col px-4 justify-center items-center gap-7 mt-20 font-jersey text-2xl text-center">
-        <motion.div // Pulsating effect
-          initial={{ scale: 1, opacity: 1 }}
-          animate={{ scale: [1, 1.01, 1], opacity: [1, 0.95, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-5 left-5 text-[var(--text-accent)]"
+    <div className="flex flex-col px-4 justify-center items-center gap-7 mt-20 font-jersey text-2xl text-center">
+      <motion.div // Pulsating effect
+        initial={{ scale: 1, opacity: 1 }}
+        animate={{ scale: [1, 1.01, 1], opacity: [1, 0.95, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="absolute top-5 left-5 text-[var(--text-accent)]"
+      >
+        <motion.div // Glitchy effect
+          animate={{}}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            times: [0, 0.6, 0.61, 0.7, 0.71, 0.8],
+          }}
         >
-          <motion.div // Glitchy effect
-            animate={{}}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              times: [0, 0.6, 0.61, 0.7, 0.71, 0.8],
-            }}
-          >
-            Online: {onlinePlayers}
-          </motion.div>
+          Online: {onlinePlayers}
         </motion.div>
-        <motion.div // Pulsating animation
-          animate={{ scale: [1, 1.01, 1], opacity: [1, 0.95, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-5 left-5  blur-sm  "
+      </motion.div>
+      <motion.div // Pulsating animation
+        animate={{ scale: [1, 1.01, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="absolute top-5 left-5  blur-sm  "
+      >
+        <motion.div // Glitchy animation
+          initial={{ color: "#39d4b7" }}
+          animate={{
+            color: [
+              "#39d4b7",
+              "#808080",
+              "#39d4b7",
+              "#808080",
+              "#39d4b7",
+              "#808080",
+              "#39d4b7",
+            ],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            times: [0, 0.6, 0.61, 0.7, 0.71, 0.8, 0.85],
+            ease: "linear",
+          }}
         >
-          <motion.div // Glitchy animation
-            animate={{
-              color: [
-                "#39d4b7",
-                "#808080",
-                "#39d4b7",
-                "#808080",
-                "#39d4b7",
-                "#808080",
-              ],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              times: [0, 0.6, 0.61, 0.7, 0.71, 0.8],
-            }}
-          >
-            Online: {onlinePlayers}
-          </motion.div>
+          Online: {onlinePlayers}
         </motion.div>
-        {/* <div className="absolute top-5 right-5">
-        <ThemeToggle />
-      </div> */}
-        <div
-          className={
-            "bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-75"
-          }
-        />
-        <p>3 humans, 1 AI.</p>
-        <p>If the AI is voted out, all humans win.</p>
-        <p>If a human is voted out, that human alone wins.</p>
-        <p>Your goal: convince others you're the AI.</p>
-        <Button
-          variant="default"
-          className="w-fit"
-          onClick={handleSignInAnonymously}
-        >
-          <p className={"text-2xl"}>PLAY WITH FRIENDS</p>
-        </Button>
-        <Button
-          variant="default"
-          className="w-fit"
-          onClick={handleSignInAnonymously}
-        >
-          <p className={"text-2xl"}> PLAY WITH STRANGERS</p>
-        </Button>
-        {/* <Button
+      </motion.div>
+      <div
+        className={
+          "bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-75"
+        }
+      />
+      <p>3 humans, 1 AI.</p>
+      <p>If the AI is voted out, all humans win.</p>
+      <p>If a human is voted out, that human alone wins.</p>
+      <p>Your goal: convince others you're the AI.</p>
+      <Button
+        variant="default"
+        className="w-fit"
+        onClick={handleSignInAnonymously}
+      >
+        <p className={"text-2xl"}>PLAY WITH FRIENDS</p>
+      </Button>
+      <Button
+        variant="default"
+        className="w-fit"
+        onClick={handleSignInAnonymously}
+      >
+        <p className={"text-2xl"}> PLAY WITH STRANGERS</p>
+      </Button>
+      {/* <Button
         variant="ghost"
         className={"absolute bottom-5 right-5 flex row  items-center gap-1"}
         onClick={() => {
@@ -137,8 +127,7 @@ const Homepage = () => {
         ESPAÑOL
         <FaLongArrowAltRight />
       </Button> */}
-      </div>
-    </AnimatePresence>
+    </div>
   );
 };
 

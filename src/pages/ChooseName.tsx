@@ -13,7 +13,7 @@ import supabase from "../api/supabase";
 import { getUserId } from "@/services/getUserId";
 import { ping } from "@/services/ping";
 
-const Lobby = () => {
+const ChooseName = () => {
   const navigate = useNavigate();
   const [waiting, setWaiting] = useState(true);
   const [count, setCount] = useState(5);
@@ -361,4 +361,4 @@ const Lobby = () => {
   );
 };
 
-export default Lobby;
+export default ChooseName;

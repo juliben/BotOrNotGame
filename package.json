@@ -32,7 +32,6 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.2.0",
     "tailwind-merge": "^3.0.2",
-    "tailwindcss": "^4.0.10",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
@@ -47,8 +46,22 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
+    "tailwindcss": "^4.0.14",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
     "vite": "^6.2.0"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juliben/BotOrNotGame.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/juliben/BotOrNotGame/issues"
+  },
+  "homepage": "https://github.com/juliben/BotOrNotGame#readme"
 }

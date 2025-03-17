@@ -14,7 +14,7 @@ const Homepage = () => {
       const userId = await signInAnonymously();
       console.log("User ID:", userId);
       localStorage.setItem("userId", userId);
-      navigate("/lobby");
+      navigate("/choose-name");
     } catch (error) {
       console.error("Authentication failed:", error);
       // Handle error
@@ -52,11 +52,21 @@ const Homepage = () => {
   };
 
   return (
-    <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20">
-      <p className="absolute top-5 left-5 ">Online: {onlinePlayers}</p>
-      <div className="absolute top-5 right-5">
+    <div className="flex flex-col p-4 justify-center items-center gap-7 mt-20 font-jersey text-2xl text-center">
+      <p className="absolute top-5 left-5 text-[var(--text-accent)] ">
+        Online: {onlinePlayers}
+      </p>
+      <p className="absolute top-5 left-5 text-[var(--text-accent)] blur-sm  ">
+        Online: {onlinePlayers}
+      </p>
+      {/* <div className="absolute top-5 right-5">
         <ThemeToggle />
-      </div>
+      </div> */}
+      <div
+        className={
+          "bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-50"
+        }
+      />
       <p>3 humans, 1 AI.</p>
       <p>If the AI is voted out, all humans win.</p>
       <p>If a human is voted out, that human alone wins.</p>
@@ -66,14 +76,16 @@ const Homepage = () => {
         className="w-fit"
         onClick={handleSignInAnonymously}
       >
-        PLAY AS A GUEST
+        <p className={"text-2xl"}>PLAY WITH FRIENDS</p>
       </Button>
-      <Button variant="secondary" className="w-fit" disabled>
-        SIGN IN / REGISTER
+      <Button
+        variant="default"
+        className="w-fit"
+        onClick={handleSignInAnonymously}
+      >
+        <p className={"text-2xl"}> PLAY WITH STRANGERS</p>
       </Button>
-      <Button variant="outline" className="w-fit" disabled>
-        LEADERBOARD
-      </Button>
+
       {/* <Button
         variant="ghost"
         className={"absolute bottom-5 right-5 flex row  items-center gap-1"}

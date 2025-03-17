@@ -5,6 +5,7 @@ import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
 import LanguageProvider from "./context/LanguageContext";
 import { ThemeProvider } from "./context/theme-provider";
+import ChooseName from "./pages/ChooseName";
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
           <Router>
             <Routes>
               <Route path="/" element={<Homepage />} />
+              <Route path="/choose-name" element={<ChooseName />} />
               <Route path="/lobby" element={<Lobby />} />
               <Route path="/room/:roomId" element={<Room />} />
             </Routes>

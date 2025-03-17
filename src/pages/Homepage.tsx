@@ -10,7 +10,7 @@ const Homepage = () => {
   const [onlinePlayers, setOnlinePlayers] = useState(0);
 
   const handleSignInAnonymously = async () => {
-    navigate("/test");
+    navigate("/choose-name");
   };
 
   // Initial fetch of # of online players

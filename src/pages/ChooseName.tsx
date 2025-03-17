@@ -112,39 +112,36 @@ const ChooseName = () => {
 
   return (
     <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center">
-      <div
-        className={
-          "bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-50"
-        }
-      />
+      <div className="bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-50" />
 
-      <p>Choose a name:</p>
-      <div className={"flex row gap-3 justify-center"}>
-        <Input
-          type="text"
-          className="w-2/3"
-          maxLength={20}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Button
-          onClick={handleGenerateName}
-          className="flex justify-center items-center"
-          disabled={loading}
-        >
-          <IoDice className={""} />
-        </Button>
-      </div>
-
-      <div className="flex flex-row justify-center items-center gap-2">
-        <Checkbox
-          checked={ready}
-          onCheckedChange={handleReady}
-          disabled={name === ""}
-        />
-        <Label className={name === "" ? "text-muted-foreground" : ""}>
-          I'm ready
-        </Label>
+      <div className="flex flex-col p-4 gap-5">
+        <p>Choose a name:</p>
+        <div className={"flex row gap-3 justify-center"}>
+          <Input
+            type="text"
+            className="w-2/3"
+            maxLength={20}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Button
+            onClick={handleGenerateName}
+            className="flex justify-center items-center"
+            disabled={loading}
+          >
+            <IoDice className={""} />
+          </Button>
+        </div>
+        <div className="flex flex-row justify-center items-center gap-2">
+          <Checkbox
+            checked={ready}
+            onCheckedChange={handleReady}
+            disabled={name === ""}
+          />
+          <Label className={name === "" ? "text-muted-foreground" : ""}>
+            I'm ready
+          </Label>
+        </div>
       </div>
     </div>
   );

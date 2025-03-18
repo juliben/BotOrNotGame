@@ -9,7 +9,7 @@ const Homepage = () => {
   const navigate = useNavigate();
   const [onlinePlayers, setOnlinePlayers] = useState(0);
 
-  const handleSignInAnonymously = async () => {
+  const handleStart = async () => {
     navigate("/choose-name");
   };
 
@@ -100,20 +100,12 @@ const Homepage = () => {
       <p>If a human is voted out, that human alone wins.</p>
       <p>Your goal: convince others you're the AI.</p>
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Button
-          variant="default"
-          className="w-fit"
-          onClick={handleSignInAnonymously}
-        >
+        <Button variant="default" className="w-fit" onClick={handleStart}>
           <p className={"text-2xl"}>PLAY WITH FRIENDS</p>
         </Button>
       </motion.div>
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Button
-          variant="default"
-          className="w-fit"
-          onClick={handleSignInAnonymously}
-        >
+        <Button variant="default" className="w-fit" onClick={handleStart}>
           <p className={"text-2xl"}> PLAY WITH STRANGERS</p>
         </Button>
       </motion.div>

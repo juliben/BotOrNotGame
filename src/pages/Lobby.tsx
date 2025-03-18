@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import supabase from "../api/supabase";
 import { getUserId } from "@/services/getUserId";
 import { ping } from "@/services/ping";
+import { fetchReadyPlayers } from "@/services/fetchReadyPlayers";
 
 const Lobby = () => {
   const navigate = useNavigate();
@@ -163,20 +164,10 @@ const Lobby = () => {
     if (!roomId) {
       return;
     }
-    const fetchReadyPlayers = async () => {
-      // Fetch the current count of ready players in the room
-      const { count, error } = await supabase
-        .from("players")
-        .select("*", { count: "exact" })
-        .eq("room_id", roomId)
-        .eq("is_ready", true)
-        .eq("is_online", true);
 
-      if (!error) setReadyCount(count);
-      console.log("Ready count:", count);
-    };
-
-    fetchReadyPlayers(); // Initial fetch
+    const count = fetchReadyPlayers(roomId); // Initial fetch
+    setReadyCount(count);
+    console.log("Fetched ready count:", count);
 
     // Subscribe to real-time updates
     const channel = supabase
@@ -223,20 +214,6 @@ const Lobby = () => {
     };
   }, [roomId]);
 
-  const handleReady = async () => {
-    const userId = await getUserId();
-
-    const { error } = await supabase
-      .from("players")
-      .update([{ is_ready: !ready, game_name: name }])
-      .eq("user_id", userId);
-    if (error) {
-      console.log("Error updating player:", error);
-    }
-    console.log("Set ready state to:", !ready);
-    setReady(!ready);
-  };
-
   useEffect(() => {
     let countdownTimer;
 
@@ -255,66 +232,6 @@ const Lobby = () => {
 
     return () => clearInterval(countdownTimer);
   }, [waiting, navigate]);
-
-  const generateName = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get("http://localhost:3000/name");
-      console.log(response.data.name);
-      return response.data.name;
-    } catch {
-      console.log("Error generating name");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getFirstName = (input: string) => {
-    const prefixes = [
-      "Male Human Name:",
-      "Female Human Name:",
-      "Male Dwarf Name:",
-      "Female Dwarf Name:",
-      "Male Elf Name:",
-      "Female Elf Name:",
-      "Male Hobbit Name:",
-      "Female Hobbit Name:",
-      "Male Orc Name:",
-      "Female Orc Name:",
-      "Male Gnome Name:",
-      "Female Gnome Name:",
-    ];
-    let namePart = input;
-
-    prefixes.forEach((prefix) => {
-      if (namePart.startsWith(prefix)) {
-        namePart = namePart.replace(prefix, "").trim();
-      }
-    });
-    return namePart.split(" ")[0];
-  };
-
-  const handleGenerateName = async () => {
-    const generatedName = await generateName();
-    setName(getFirstName(generatedName));
-  };
-
-  const handleDebug = async () => {
-    console.log("Refetching ready players...");
-    const { count, error } = await supabase
-      .from("players")
-      .select("*", { count: "exact" })
-      .eq("room_id", roomId)
-      .eq("is_ready", true);
-
-    if (!error) {
-      setReadyCount(count);
-
-      if (count === 3) {
-        setWaiting(false);
-      }
-    }
-  };
 
   return (
     <div className="flex flex-col p-4 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center">

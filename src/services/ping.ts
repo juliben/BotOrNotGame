@@ -8,4 +8,5 @@ export const ping = async (userId) => {
   if (error) {
     console.error("Error pinging online status:", error);
   }
+  console.log("Pinged");
 };

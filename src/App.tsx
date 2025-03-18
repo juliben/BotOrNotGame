@@ -11,6 +11,7 @@ import LanguageProvider from "./context/LanguageContext";
 import { ThemeProvider } from "./context/theme-provider";
 import ChooseName from "./pages/ChooseName";
 import { motion, AnimatePresence } from "motion/react";
+import TestScreen from "./pages/test";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -26,9 +27,20 @@ const AnimatedRoutes = () => {
             </motion.div>
           }
         />
-        <Route path="/choose-name" element={<ChooseName />} />
+        <Route
+          path="/choose-name"
+          element={
+            // <motion.div
+            //   exit={{ translateX: -400, rotate: -10, opacity: 0.5 }}
+            //   transition={{ duration: 1 }}
+            // >
+            <ChooseName />
+            // </motion.div>
+          }
+        />
         <Route path="/lobby" element={<Lobby />} />
         <Route path="/room/:roomId" element={<Room />} />
+        <Route path="/test/:userId" element={<TestScreen />} />
       </Routes>
     </AnimatePresence>
   );

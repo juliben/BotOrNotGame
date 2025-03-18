@@ -114,7 +114,7 @@ const ChooseName = () => {
         transition={{ duration: 0.5 }}
         className="flex flex-col py-15 md:w-2/3 lg:w-1/2 flex-1 items-center justify-center h-2/3 w-full p-4 gap-7 border-2 rounded-xl bg-[#353b85] shadow-lg"
       >
-        <p>Choose a name:</p>
+        <p>Create your character:</p>
         <div className={"flex row gap-3 justify-center w-full px-5   "}>
           <Input
             type="text"
@@ -138,7 +138,7 @@ const ChooseName = () => {
         <div className={"flex flex-row justify-center items-center gap-3"}>
           <img
             src={avatarUrl}
-            className={"flex w-13 h-13 rounded-full border-1 ring-border"}
+            className={"flex w-14 h-14 rounded-full border ring-border"}
           />
           <Button
             onClick={() => randomizer()}

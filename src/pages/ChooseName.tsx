@@ -6,6 +6,7 @@ import { Label } from "@radix-ui/react-label";
 import axios from "axios";
 import { AnimatePresence, motion, useAnimation } from "motion/react";
 
+// import cutePortrait from "../assets/avatars/Cute-portraits_01.png";
 import { IoDice } from "react-icons/io5";
 
 import { useNavigate } from "react-router-dom";
@@ -21,38 +22,23 @@ const ChooseName = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
+  const [randomAvatarNumber, setRandomAvatarNumber] = useState<string | null>(
+    null
+  );
 
-  const rollDice = useAnimation();
+  // Avatar randomizer
+
+  const randomizer = () => {
+    const random = Math.floor(Math.random() * 76) + 1;
+    const number = String(random).padStart(2, "0");
+    setRandomAvatarNumber(number);
+  };
 
   useEffect(() => {
-    let pingInterval;
+    randomizer();
+  }, []);
 
-    if (!userId) {
-      getUserId().then((id) => {
-        setUserId(id);
-      });
-    }
-    if (userId === null) {
-      console.log("Ping: User ID not found");
-      return;
-    }
-    console.log("Attempting to start pinging, userId:", userId);
-
-    const startPinging = async () => {
-      // Send initial ping
-      ping(userId);
-
-      console.log("Now pinging");
-
-      // Send a ping every 30 seconds
-      pingInterval = setInterval(ping, 30000);
-    };
-
-    startPinging();
-    return () => {
-      if (pingInterval) clearInterval(pingInterval);
-    };
-  }, [userId]);
+  const avatarUrl = `../../public/avatars/Cute-portraits_${randomAvatarNumber}.png`;
 
   const handleReady = async () => {
     const userId = await getUserId();
@@ -158,9 +144,12 @@ const ChooseName = () => {
               </Button>
             </div>
             <div className={"flex flex-row justify-center items-center gap-3"}>
-              <div className={"bg-gray-400 w-13 h-13 rounded-full"} />
+              <img
+                src={avatarUrl}
+                className={"flex w-13 h-13 rounded-full border-1 ring-border"}
+              />
               <Button
-                onClick={handleGenerateName}
+                onClick={() => randomizer()}
                 className="border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground rounded-md border bg-[#2c2971] shadow-xs transition-[color,box-shadow]"
               >
                 <motion.div

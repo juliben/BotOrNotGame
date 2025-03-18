@@ -10,7 +10,6 @@ import Room from "./pages/Room";
 import LanguageProvider from "./context/LanguageContext";
 import { ThemeProvider } from "./context/theme-provider";
 import ChooseName from "./pages/ChooseName";
-import TestScreen from "./pages/test";
 import { motion, AnimatePresence } from "motion/react";
 
 const AnimatedRoutes = () => {
@@ -30,7 +29,6 @@ const AnimatedRoutes = () => {
         <Route path="/choose-name" element={<ChooseName />} />
         <Route path="/lobby" element={<Lobby />} />
         <Route path="/room/:roomId" element={<Room />} />
-        <Route path="/test" element={<TestScreen />} />
       </Routes>
     </AnimatePresence>
   );

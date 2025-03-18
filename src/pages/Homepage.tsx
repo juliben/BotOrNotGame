@@ -99,20 +99,24 @@ const Homepage = () => {
       <p>If the AI is voted out, all humans win.</p>
       <p>If a human is voted out, that human alone wins.</p>
       <p>Your goal: convince others you're the AI.</p>
-      <Button
-        variant="default"
-        className="w-fit"
-        onClick={handleSignInAnonymously}
-      >
-        <p className={"text-2xl"}>PLAY WITH FRIENDS</p>
-      </Button>
-      <Button
-        variant="default"
-        className="w-fit"
-        onClick={handleSignInAnonymously}
-      >
-        <p className={"text-2xl"}> PLAY WITH STRANGERS</p>
-      </Button>
+      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <Button
+          variant="default"
+          className="w-fit"
+          onClick={handleSignInAnonymously}
+        >
+          <p className={"text-2xl"}>PLAY WITH FRIENDS</p>
+        </Button>
+      </motion.div>
+      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <Button
+          variant="default"
+          className="w-fit"
+          onClick={handleSignInAnonymously}
+        >
+          <p className={"text-2xl"}> PLAY WITH STRANGERS</p>
+        </Button>
+      </motion.div>
       {/* <Button
         variant="ghost"
         className={"absolute bottom-5 right-5 flex row  items-center gap-1"}

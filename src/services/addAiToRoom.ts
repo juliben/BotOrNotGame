@@ -37,6 +37,19 @@ export const addAIToRoom = async (roomId: string) => {
 
     await generateNameForAi();
     await assignNumbersToPlayers(roomId);
+
+    // Set room to full
+    const { data: updateData2, error: updateError2 } = await supabase
+      .from("rooms")
+      .update({ status: "full" })
+      .eq("id", roomId)
+      .select();
+
+    if (updateError2) {
+      console.log("Error updating room data in Supabase:", updateError2);
+    }
+
+    console.log("Room set to full:", updateData2[0].status);
   } catch (error) {
     console.log("Error adding AI to the room:", error);
   }

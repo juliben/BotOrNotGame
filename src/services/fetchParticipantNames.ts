@@ -7,7 +7,7 @@ export const fetchParticipantNames = async (roomId: string) => {
   try {
     const { data, error } = await supabase
       .from("players")
-      .select("user_id, game_name, number")
+      .select("user_id, game_name, number, avatar")
       .eq("room_id", roomId);
     if (error) {
       console.log("Error fetching participants from Supabase:", error);
@@ -18,6 +18,7 @@ export const fetchParticipantNames = async (roomId: string) => {
       game_name: player.game_name,
       user_id: player.user_id,
       number: player.number,
+      avatar: player.avatar,
     }));
 
     // Fetch AI name

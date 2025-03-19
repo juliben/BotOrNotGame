@@ -9,7 +9,6 @@ import { addAIToRoom } from "@/services/addAiToRoom";
 import { AI_USER_ID } from "../../constants";
 import omit from "lodash/omit";
 import isEqual from "lodash/isEqual";
-import { set } from "lodash";
 
 const TestScreen = ({}) => {
   const navigate = useNavigate();
@@ -20,6 +19,12 @@ const TestScreen = ({}) => {
   const [playersMap, setPlayersMap] = useState([{}]);
   const [isRevealed, setIsRevealed] = useState(false);
   const [aiAdded, setAiAdded] = useState(false);
+
+  useEffect(() => {
+    if (roomFull) {
+      setIsRevealed(true);
+    }
+  }, [roomFull]);
 
   //   // Start pinging
   useEffect(() => {
@@ -65,6 +70,7 @@ const TestScreen = ({}) => {
         return;
       }
       console.log("Players: ", data);
+
       const players = data.reduce((acc, player) => {
         acc[player.user_id] = {
           game_name: player.game_name,
@@ -75,7 +81,6 @@ const TestScreen = ({}) => {
       }, {}); // Provide an initial empty object
 
       setPlayersMap(players);
-      console.log("Set players map to :", players);
     });
   };
 
@@ -99,6 +104,10 @@ const TestScreen = ({}) => {
         async (payload) => {
           // To check if the payload is just because of pings
 
+          // Skip the AI being added (it's already fetched even if not added to room yet)
+          if (payload.new.user_id === AI_USER_ID) {
+            return;
+          }
           if (payload.eventType === "UPDATE" && payload.old && payload.new) {
             const oldData = omit(payload.old, "last_seen");
             const newData = omit(payload.new, "last_seen");

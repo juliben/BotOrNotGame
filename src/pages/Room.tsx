@@ -12,7 +12,6 @@ import { fetchParticipants } from "@/services/fetchParticipants.ts";
 import { fetchParticipantNames } from "@/services/fetchParticipantNames.ts";
 import { AI_USER_ID } from "../../constants.ts";
 import axios from "axios";
-import { BugIcon } from "lucide-react";
 import { ping } from "@/services/ping.ts";
 import { processVotes } from "@/services/processVotes.ts";
 
@@ -20,7 +19,7 @@ const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(100000);
+  const [countdown, setCountdown] = useState(10000);
   const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10);
   const [winner, setWinner] = useState(null);
@@ -81,26 +80,26 @@ const Room = () => {
   }, [messages]);
 
   // Counter to trigger voting
-  // useEffect(() => {
-  //   const counter = setInterval(() => {
-  //     if (countdown > 0) {
-  //       setCountdown((prev) => {
-  //         if (prev <= 0) {
-  //           clearInterval(counter);
-  //           setIsVoting(true);
-  //           startVotingCountdown();
+  useEffect(() => {
+    const counter = setInterval(() => {
+      if (countdown > 0) {
+        setCountdown((prev) => {
+          if (prev <= 0) {
+            clearInterval(counter);
+            setIsVoting(true);
+            startVotingCountdown();
 
-  //           // // This is the timer to count the votes after 12 seconds. It should be cleared in the votes channel subscription if enough votes are counted before the timeout
-  //           // startVotingTimer();
-  //           return 0;
-  //         }
-  //         return prev - 1;
-  //       });
-  //     }
-  //   }, 1000);
+            // // This is the timer to count the votes after 12 seconds. It should be cleared in the votes channel subscription if enough votes are counted before the timeout
+            // startVotingTimer();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
+    }, 1000);
 
-  //   return () => clearInterval(counter);
-  // }, []);
+    return () => clearInterval(counter);
+  }, []);
 
   // Callback function for voting countdown
   const startVotingCountdown = () => {
@@ -265,11 +264,6 @@ const Room = () => {
         messages,
       });
 
-      console.log(typeof response);
-      console.log(response);
-
-      console.log("Should respond?: " + response.data.shouldRespond);
-      console.log("Confidence: " + response.data.confidence);
       const isAppropriate =
         response.data.shouldRespond === true && response.data.confidence >= 0.7;
 
@@ -371,6 +365,7 @@ const Room = () => {
   useEffect(() => {
     const fetchPlayerNamesAndIds = async () => {
       const players = await fetchParticipantNames(roomId);
+      console.log("Fetching players names and ids, players: ", players);
 
       // Only update state if every player's number is set (non-null)
       if (players.every((player) => player.number !== null)) {
@@ -508,7 +503,7 @@ const Room = () => {
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>
-        <Button onClick={sendMessagesToAi}>AI</Button>
+        <Button onClick={() => console.log(playersMap)}>AI</Button>
       </div>
 
       {isVoting && (

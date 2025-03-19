@@ -35,7 +35,7 @@ const ChooseName = () => {
     randomizer();
   }, []);
 
-  const avatarUrl = `../../public/avatars/Cute-portraits_${randomAvatarNumber}.png`;
+  const avatarUrl = `/avatars/Cute-portraits_${randomAvatarNumber}.png`;
 
   // When ready, sign in as anon and update table with data
   const handleReady = async () => {
@@ -105,12 +105,22 @@ const ChooseName = () => {
 
   return (
     <div className="flex flex-col flex-1 p-4 px-6 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center">
-      <div className="bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-50 top-0 left-0" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.5 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-50 top-0 left-0"
+      />
 
       <motion.div
         initial={{ translateX: 400, rotate: 10, opacity: 0.5 }}
         animate={{ translateX: 0, rotate: 0, opacity: 1 }}
-        exit={{ translateX: -400, rotate: -10, opacity: 0.5 }}
+        exit={{
+          translateX: -400,
+          rotate: -10,
+          opacity: 0,
+        }}
         transition={{ duration: 0.5 }}
         className="flex flex-col py-15 md:w-2/3 lg:w-1/2 flex-1 items-center justify-center h-2/3 w-full p-4 gap-7 border-2 rounded-xl bg-[#353b85] shadow-lg"
       >

@@ -435,17 +435,19 @@ const Room = () => {
   };
 
   return (
-    <div className={`flex flex-col p-4 min-h-screen max-h-screen `}>
+    <div
+      className={`flex flex-col p-4 min-h-screen max-h-screen bg-[#353b85] `}
+    >
       {winner && <p>Winner: {winner.game_name}</p>}
       <p
-        className={`self-end mb-3  ${
+        className={`self-end mb-3 font-press-start text-xs  ${
           countdown > 30 ? "text-foreground" : "text-red-500"
         }`}
       >
         {countdown}
       </p>
       <Card
-        className={`flex-1 overflow-y-scroll mb-3 py-3 gap-3 ${
+        className={`flex-1 overflow-y-scroll mb-3 py-3 gap-3 bg-background ${
           isVoting ? " blur-xs pointer-events-none" : ""
         } `}
       >
@@ -502,13 +504,7 @@ const Room = () => {
           placeholder="Type a message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-        />{" "}
-        <Button onClick={() => console.log(votes)} disabled={loading}>
-          Votes
-        </Button>
-        <Button onClick={() => setIsVoting(true)} disabled={loading}>
-          <BugIcon />
-        </Button>
+        />
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>

@@ -10,8 +10,9 @@ import Room from "./pages/Room";
 import LanguageProvider from "./context/LanguageContext";
 import { ThemeProvider } from "./context/theme-provider";
 import ChooseName from "./pages/ChooseName";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
 import TestScreen from "./pages/test";
+import TestScreen2 from "./pages/test2";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -19,28 +20,12 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route
-          path="/"
-          element={
-            <motion.div exit={{ opacity: 0 }} transition={{ duration: 0.7 }}>
-              <Homepage />
-            </motion.div>
-          }
-        />
-        <Route
-          path="/choose-name"
-          element={
-            // <motion.div
-            //   exit={{ translateX: -400, rotate: -10, opacity: 0.5 }}
-            //   transition={{ duration: 1 }}
-            // >
-            <ChooseName />
-            // </motion.div>
-          }
-        />
+        <Route path="/" element={<Homepage />} />
+        <Route path="/choose-name" element={<ChooseName />} />
         <Route path="/lobby" element={<Lobby />} />
         <Route path="/room/:roomId" element={<Room />} />
         <Route path="/test/:userId" element={<TestScreen />} />
+        <Route path="/test2" element={<TestScreen2 />} />
       </Routes>
     </AnimatePresence>
   );

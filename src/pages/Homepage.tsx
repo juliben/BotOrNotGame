@@ -1,8 +1,8 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import { useNavigate } from "react-router-dom";
 import supabase from "@/api/supabase";
-import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 const Homepage = () => {
@@ -44,7 +44,7 @@ const Homepage = () => {
   };
 
   return (
-    <div className="flex flex-col px-4 justify-center items-center gap-7 mt-20 font-jersey text-2xl text-center">
+    <motion.div className="flex flex-1 flex-col px-4 justify-center items-center gap-7 mt-20 font-jersey text-2xl text-center">
       <motion.div // Pulsating effect
         initial={{ scale: 1, opacity: 1 }}
         animate={{ scale: [1, 1.01, 1], opacity: [1, 0.95, 1] }}
@@ -123,7 +123,7 @@ const Homepage = () => {
         ESPAÑOL
         <FaLongArrowAltRight />
       </Button> */}
-    </div>
+    </motion.div>
   );
 };
 

@@ -14,6 +14,7 @@ import { AI_USER_ID } from "../../constants.ts";
 import axios from "axios";
 import { ping } from "@/services/ping.ts";
 import { processVotes } from "@/services/processVotes.ts";
+import { getFirstMessageFromAi } from "@/services/getFirstMessageFromAi.ts";
 
 const Room = () => {
   const [input, setInput] = useState("");
@@ -24,6 +25,9 @@ const Room = () => {
   const [votingCountdown, setVotingCountdown] = useState(10);
   const [winner, setWinner] = useState(null);
   const [votes, setVotes] = useState([]);
+
+  // To make sure the first message from the AI is only requested once
+  const [sentFirstMessage, setSentFirstMessage] = useState(false);
 
   const votesTimerRef = useRef(null);
   const namesWithIdsRef = useRef(null);
@@ -68,6 +72,27 @@ const Room = () => {
       if (pingInterval) clearInterval(pingInterval);
     };
   }, [userId]);
+
+  // First message from AI?
+  useEffect(() => {
+    console.log("Attempting to get first message from AI");
+    // if (sentFirstMessage) {
+    //   return;
+    // }
+    if (namesWithIds[0]?.user_id !== userId) {
+      return;
+    }
+    const aiUser = namesWithIds.find((name) => name.user_id === AI_USER_ID);
+    if (!aiUser) {
+      console.log("AI user not found (getFirstMessageFromAi)");
+      return;
+    }
+    console.log(
+      "Getting first message from ai," + aiUser.game_name + " " + aiUser.avatar
+    );
+    getFirstMessageFromAi(aiUser.game_name, aiUser.avatar, roomId);
+    setSentFirstMessage(true);
+  }, [namesWithIds, roomId]);
 
   // For scrolling to bottom on new messages
   const messagesEndRef = useRef(null);
@@ -209,6 +234,7 @@ const Room = () => {
             message: payload.new.content,
             is_vote: payload.new.is_vote,
             is_from_server: payload.new.is_from_server,
+            avatar: payload.new.avatar,
           };
           console.log("Received payload message: " + newMessage.message);
           setMessages((messages) => [...messages, newMessage]);
@@ -233,6 +259,7 @@ const Room = () => {
     const myUser = namesWithIds.find((name) => name.user_id === userId);
     if (!myUser) return;
 
+    const myAvatar = myUser.avatar;
     const myName = myUser.game_name;
 
     try {
@@ -241,6 +268,7 @@ const Room = () => {
         room_id: roomId,
         content: input,
         game_name: myName,
+        avatar: myAvatar,
       });
       if (error) {
         console.log("Error sending message to Supabase:", error);
@@ -309,6 +337,7 @@ const Room = () => {
           content: sentence,
           game_name: aiName,
           room_id: roomId,
+          avatar: aiUser.avatar,
         });
         if (error) {
           console.log("Error sending sentence to Supabase:", error);
@@ -347,11 +376,16 @@ const Room = () => {
     )?.game_name;
     if (!hisName) return;
 
+    const myAvatar = namesWithIds.find(
+      (name) => name.user_id === userId
+    )?.avatar;
+
     try {
       const { error } = await supabase.from("messages").insert({
         sender_id: userId,
         content: `${myName} voted for ${hisName}`,
         room_id: roomId,
+        avatar: myAvatar,
         is_vote: true,
       });
       if (error) {
@@ -429,6 +463,8 @@ const Room = () => {
     4: "bg-[#660066] text-white mx-2", // Dark purple for player 4
   };
 
+  const myAvatar = namesWithIds.find((name) => name.user_id === userId)?.avatar;
+
   return (
     <div
       className={`flex flex-col p-4 min-h-screen max-h-screen bg-[#353b85] `}
@@ -462,29 +498,88 @@ const Room = () => {
         )}
         {messages.map((msg, index) => {
           const senderNumber = playersMap[msg.sender];
+          // This is to check whether to display avatar image in message bubble or not
+          const isLastMessage =
+            index === messages.length - 1 ||
+            messages[index + 1].sender !== msg.sender;
 
           return (
             <div
-              key={index}
               className={`${
                 msg.sender === userId ? "self-end" : "self-start"
-              } ${
-                msg.is_vote
-                  ? `${playerVoteStyles[senderNumber]}`
-                  : msg.is_from_server
-                  ? "bg-gray-200 text-gray-800 self-center text-center mx-auto"
-                  : `message-bubble ${messageBubbleStyles[senderNumber]}`
-              } max-w-xs p-2 rounded-lg  `}
+              } flex flex-row items-end relative`}
             >
-              <div className={"flex flex-col "}>
-                {!msg.is_vote && !msg.is_from_server && (
-                  <p className={`${playerNameStyles[senderNumber]}`}>
-                    ~{msg.sender_name}
-                  </p>
+              {isLastMessage &&
+                msg.sender !== userId &&
+                !msg.is_from_server &&
+                !msg.is_vote && (
+                  <img
+                    src={`/avatars/Cute-portraits_${msg.avatar}.png`}
+                    className="rounded-full w-7 h-7 ml-2 mb-0.5"
+                  />
                 )}
-                <p>{msg.message}</p>
+              {!isLastMessage &&
+                msg.sender !== userId &&
+                !msg.is_from_server &&
+                !msg.is_vote && (
+                  <div className="rounded-full w-7 h-7 ml-2 mb-0.5 bg-transparent" />
+                )}
+              <div
+                key={index}
+                className={`${
+                  msg.sender === userId
+                    ? "self-end"
+                    : msg.is_from_server
+                    ? "self-center"
+                    : "self-start"
+                } ${
+                  msg.is_vote
+                    ? `${playerVoteStyles[senderNumber]}`
+                    : msg.is_from_server
+                    ? "bg-gray-200 text-gray-800"
+                    : `message-bubble ${messageBubbleStyles[senderNumber]}`
+                } max-w-xs p-2 rounded-lg `}
+              >
+                <div>
+                  <div className={"flex flex-col "}>
+                    {!msg.is_vote && !msg.is_from_server && (
+                      <p className={`${playerNameStyles[senderNumber]}`}>
+                        ~{msg.sender_name}
+                      </p>
+                    )}
+                    <div className="flex flex-row items-center gap-2">
+                      <p>{msg.message}</p>
+                    </div>
+                  </div>
+
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
-              <div ref={messagesEndRef} />
+
+              {/* Tail: only add if this is the last message and not a server message */}
+              {isLastMessage && !msg.is_from_server && (
+                <div
+                  className={`absolute -bottom-2 ${
+                    msg.sender === userId ? "right-4" : "left-4"
+                  }`}
+                >
+                  {/* The triangle is created using borders.
+                Adjust border colors to match your message bubble background */}
+                  {/* <div
+                    className={`w-0 h-0 border-10 border-transparent ${messageBubbleStyles[senderNumber]}
+                    }`}
+                  /> */}
+                </div>
+              )}
+              {isLastMessage && msg.sender === userId && (
+                <img
+                  src={`/avatars/Cute-portraits_${myAvatar}.png`}
+                  className="rounded-full w-7 h-7 mr-2 mb-0.5"
+                />
+              )}
+              {!isLastMessage && msg.sender === userId && (
+                <div className="rounded-full w-7 h-7 mr-2 mb-0.5 bg-transparent" />
+              )}
             </div>
           );
         })}
@@ -503,7 +598,7 @@ const Room = () => {
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>
-        <Button onClick={() => console.log(playersMap)}>AI</Button>
+        <Button onClick={sendMessagesToAi}>AI</Button>
       </div>
 
       {isVoting && (

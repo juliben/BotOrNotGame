@@ -6,6 +6,8 @@ import { Label } from "@radix-ui/react-label";
 import axios from "axios";
 import { motion } from "motion/react";
 
+import { names, spanishNames } from "../../constants.ts";
+
 // import cutePortrait from "../assets/avatars/Cute-portraits_01.png";
 import { IoDice } from "react-icons/io5";
 
@@ -60,17 +62,22 @@ const ChooseName = () => {
     navigate("/test/" + userId);
   };
 
-  const generateName = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get("http://localhost:3000/name");
-      console.log(response.data.name);
-      return response.data.name;
-    } catch {
-      console.log("Error generating name");
-    } finally {
-      setLoading(false);
-    }
+  // const generateName = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await axios.get("http://localhost:3000/name");
+  //     console.log(response.data.name);
+  //     return response.data.name;
+  //   } catch {
+  //     console.log("Error generating name");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const getName = () => {
+    const randomName = names[Math.floor(Math.random() * names.length)];
+    setName(randomName);
   };
 
   const getFirstName = (input: string) => {
@@ -134,7 +141,7 @@ const ChooseName = () => {
             onChange={(e) => setName(e.target.value)}
           />
           <Button
-            onClick={handleGenerateName}
+            onClick={getName}
             className="border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground rounded-md border bg-[#2c2971] shadow-xs transition-[color,box-shadow]"
           >
             <motion.div

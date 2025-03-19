@@ -3,6 +3,7 @@ import axios from "axios";
 import supabase from "../api/supabase";
 import { getFirstName } from "./getFirstName";
 
+// Generates name and avatar for the AI
 export const generateNameForAi = async () => {
   try {
     console.log("Generating name for AI...");
@@ -11,9 +12,12 @@ export const generateNameForAi = async () => {
     const generatedName = response.data.name;
     const firstName = getFirstName(generatedName);
 
+    const randomNumber = Math.floor(Math.random() * 76) + 1;
+    const number = String(randomNumber).padStart(2, "0");
+
     const { error } = await supabase
       .from("players")
-      .update({ game_name: firstName })
+      .update({ game_name: firstName, avatar: number })
       .eq("user_id", AI_USER_ID);
 
     if (error) {

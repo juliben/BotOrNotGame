@@ -2,6 +2,7 @@ import supabase from "../api/supabase";
 import { AI_USER_ID } from "../../constants.ts";
 
 // returns all players names
+// Also game_names, numbers and avatars
 
 export const fetchParticipantNames = async (roomId: string) => {
   try {
@@ -21,10 +22,10 @@ export const fetchParticipantNames = async (roomId: string) => {
       avatar: player.avatar,
     }));
 
-    // Fetch AI name
+    // Fetch AI name & avatar
     const { data: aiName, error: aiNameError } = await supabase
       .from("players")
-      .select("game_name")
+      .select("game_name, avatar")
       .eq("user_id", AI_USER_ID)
       .single();
 
@@ -38,10 +39,12 @@ export const fetchParticipantNames = async (roomId: string) => {
     const humanNumbers = humanPlayers.map((player) => player.number);
     const aiNumber = numbers.find((number) => !humanNumbers.includes(number));
 
+    // All of the AI player's data
     const AI_NAME_AND_ID = {
       game_name: aiName.game_name,
       user_id: AI_USER_ID,
       number: aiNumber,
+      avatar: aiName.avatar,
     };
 
     // Do not update in Supabase (the AI is present in many rooms and many games)

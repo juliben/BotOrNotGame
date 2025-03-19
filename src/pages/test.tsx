@@ -20,13 +20,14 @@ const TestScreen = ({}) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [aiAdded, setAiAdded] = useState(false);
 
+  // To reveal the player's avatars when starting the game
   useEffect(() => {
     if (roomFull) {
       setIsRevealed(true);
     }
   }, [roomFull]);
 
-  //   // Start pinging
+  // Start pinging
   useEffect(() => {
     let pingInterval: any;
     console.log("Attempting to ping online status, userId:", userId);
@@ -152,7 +153,7 @@ const TestScreen = ({}) => {
     if (!roomId) {
       return;
     }
-    if (readyCount === 3 && !aiAdded) {
+    if (readyCount === 4 && !aiAdded) {
       if (Object.keys(playersMap)[0] === userId) {
         console.log("I am the first participant, adding AI to the room");
         addAIToRoom(roomId);

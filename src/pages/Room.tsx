@@ -42,6 +42,18 @@ const Room = () => {
   const [playersMap, setPlayersMap] = useState({});
   const [userId, setUserId] = useState(null);
 
+  // Get a delegated user to send requests
+  const getLeaderId = () => {
+    if (!namesWithIdsRef.current || namesWithIdsRef.current.length === 0)
+      return null;
+    // Map to IDs and sort them lexicographically
+    const sortedIds = namesWithIdsRef.current
+      .map((user) => user.user_id)
+      .filter((id) => id !== "51fa8d86-ff0e-45ad-b4a0-06c3b8fdab93")
+      .sort();
+    return sortedIds[0];
+  };
+
   // Start pinging (online status)
   useEffect(() => {
     let pingInterval;
@@ -73,13 +85,42 @@ const Room = () => {
     };
   }, [userId]);
 
+  // Get responses from AI
+  useEffect(() => {
+    if (
+      messages.length === 0 ||
+      (messages.length === 1 && messages[0].sender === AI_USER_ID)
+    ) {
+      return;
+    }
+
+    if (
+      messages.length > 1 &&
+      messages[messages.length - 1].sender === AI_USER_ID
+    ) {
+      console.log("Last message was from AI");
+      return;
+    }
+
+    const leaderId = getLeaderId();
+    if (leaderId !== userId) {
+      return;
+    }
+
+    console.log("Sending messages to AI");
+    sendMessagesToAi();
+  }, [messages]);
+
   // First message from AI?
   useEffect(() => {
-    console.log("Attempting to get first message from AI");
-    // if (sentFirstMessage) {
-    //   return;
-    // }
-    if (namesWithIds[0]?.user_id !== userId) {
+    if (sentFirstMessage) {
+      console.log("Already sent first message");
+      return;
+    }
+    const leaderId = getLeaderId();
+    if (leaderId !== userId) {
+      console.log("Leader ID: ", leaderId);
+      console.log("My id: ", userId);
       return;
     }
     const aiUser = namesWithIds.find((name) => name.user_id === AI_USER_ID);
@@ -87,9 +128,10 @@ const Room = () => {
       console.log("AI user not found (getFirstMessageFromAi)");
       return;
     }
-    console.log(
-      "Getting first message from ai," + aiUser.game_name + " " + aiUser.avatar
-    );
+    if (!flipCoin()) {
+      console.log("Skipping first message from AI");
+      return;
+    }
     getFirstMessageFromAi(aiUser.game_name, aiUser.avatar, roomId);
     setSentFirstMessage(true);
   }, [namesWithIds, roomId]);
@@ -286,7 +328,6 @@ const Room = () => {
     if (!aiUser) return;
     const aiName = aiUser.game_name;
 
-    console.log("Sending messages array to AI....");
     try {
       const response = await axios.post("http://localhost:3000/spanish", {
         messages,
@@ -323,7 +364,7 @@ const Room = () => {
       // Process each sentence sequentially.
       for (const sentence of sentences) {
         // Calculate the delay for this sentence (e.g., 50ms per character)
-        const sentenceDelay = sentence.length * 100;
+        const sentenceDelay = sentence.length * 50;
         console.log(
           `Waiting ${sentenceDelay}ms before sending sentence: "${sentence}"`
         );
@@ -344,6 +385,15 @@ const Room = () => {
         }
       }
     } catch (error) {
+      if (error.status === 429) {
+        // There's another request in progress, randomize whether to resend or not
+        const coinFlip = flipCoin();
+        console.log("coinFlip:", coinFlip);
+        if (coinFlip) {
+          console.log("Resending messages to AI...");
+          await sendMessagesToAi();
+        }
+      }
       console.log("Error sending message to AI:", error);
     }
   };
@@ -598,7 +648,6 @@ const Room = () => {
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>
-        <Button onClick={sendMessagesToAi}>AI</Button>
       </div>
 
       {isVoting && (

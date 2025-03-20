@@ -15,14 +15,15 @@ import axios from "axios";
 import { ping } from "@/services/ping.ts";
 import { processVotes } from "@/services/processVotes.ts";
 import { getFirstMessageFromAi } from "@/services/getFirstMessageFromAi.ts";
+import { motion } from "motion/react";
 
 const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(10000);
+  const [countdown, setCountdown] = useState(180);
   const [isVoting, setIsVoting] = useState(false);
-  const [votingCountdown, setVotingCountdown] = useState(10);
+  const [votingCountdown, setVotingCountdown] = useState(10000);
   const [winner, setWinner] = useState(null);
   const [votes, setVotes] = useState([]);
 
@@ -119,8 +120,6 @@ const Room = () => {
     }
     const leaderId = getLeaderId();
     if (leaderId !== userId) {
-      console.log("Leader ID: ", leaderId);
-      console.log("My id: ", userId);
       return;
     }
     const aiUser = namesWithIds.find((name) => name.user_id === AI_USER_ID);
@@ -386,13 +385,7 @@ const Room = () => {
       }
     } catch (error) {
       if (error.status === 429) {
-        // There's another request in progress, randomize whether to resend or not
-        const coinFlip = flipCoin();
-        console.log("coinFlip:", coinFlip);
-        if (coinFlip) {
-          console.log("Resending messages to AI...");
-          await sendMessagesToAi();
-        }
+        console.log("Another AI request in progress.");
       }
       console.log("Error sending message to AI:", error);
     }
@@ -495,10 +488,10 @@ const Room = () => {
   };
 
   const playerNameStyles = {
-    1: "text-[#99CCFF] font-medium", // Light blue for player 1
-    2: "text-[#66FF66] font-medium", // Light green for player 2
-    3: "text-[#FF6666] font-medium", // Light red for player 3
-    4: "text-[#CC99CC] font-medium", // Light purple for player 4
+    1: "text-[#99CCFF] ", // Light blue for player 1
+    2: "text-[#66FF66] ", // Light green for player 2
+    3: "text-[#FF6666] ", // Light red for player 3
+    4: "text-[#CC99CC] ", // Light purple for player 4
   };
   const playerVoteStyles = {
     1: "text-[#0066CC] font-medium", // Light blue for player 1
@@ -507,10 +500,10 @@ const Room = () => {
     4: "text-[#660066] font-medium", // Light purple for player 4
   };
   const messageBubbleStyles = {
-    1: "bg-[#0066CC] text-white mx-2", // Dark blue for player 1
-    2: "bg-[#006600] text-white mx-2", // Dark green for player 2
-    3: "bg-[#990000] text-white mx-2", // Dark red for player 3
-    4: "bg-[#660066] text-white mx-2", // Dark purple for player 4
+    1: "bg-[#0066CC] text-white", // Dark blue for player 1
+    2: "bg-[#006600] text-white", // Dark green for player 2
+    3: "bg-[#990000] text-white", // Dark red for player 3
+    4: "bg-[#660066] text-white", // Dark purple for player 4
   };
 
   const myAvatar = namesWithIds.find((name) => name.user_id === userId)?.avatar;
@@ -537,7 +530,9 @@ const Room = () => {
             {shuffledNames.map((player, index) => (
               <span
                 key={player.user_id}
-                className={`${playerNameStyles[player.number]} px-1`}
+                className={`${
+                  playerNameStyles[player.number]
+                } px-1 font-medium `}
               >
                 {player.game_name}
                 {index < shuffledNames.length - 1 ? ", " : ""}
@@ -588,7 +583,7 @@ const Room = () => {
                     : msg.is_from_server
                     ? "bg-gray-200 text-gray-800"
                     : `message-bubble ${messageBubbleStyles[senderNumber]}`
-                } max-w-xs p-2 rounded-lg `}
+                } max-w-xs p-2 rounded-lg mx-2 `}
               >
                 <div>
                   <div className={"flex flex-col "}>
@@ -648,33 +643,47 @@ const Room = () => {
         <Button onClick={handleSendMessage} disabled={loading}>
           Send
         </Button>
+        <Button onClick={() => setIsVoting(true)} disabled={loading}>
+          Debug
+        </Button>
       </div>
 
       {isVoting && (
-        <div className="fixed inset-0 flex items-center justify-center ">
-          <Card className="p-4 m-4 w-full max-w-md border-black border border-dotted rounded-lg text-foreground">
-            <p className="text-center text-red-400">{votingCountdown}</p>
-            <h1 className="text-center text-xl font-bold ">Who's the bot?</h1>
-            <div className="flex flex-col space-y-4 mb-4 justify-center items-center">
+        <div className="fixed inset-0 flex items-center justify-center font-press-start text-x ">
+          <motion.div
+            initial={{ scale: 0.5 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="p-4 m-4 w-full mb-20"
+          >
+            <p className="text-center text-red-400 mb-3">{votingCountdown}</p>
+            <h1 className="text-center font-bold mb-5 ">Who's the bot?</h1>
+            <div className="flex flex-row flex-wrap item-center justify-center gap-0">
               {shuffledNames.map((player) =>
                 player.user_id === userId ? null : (
-                  <div
-                    key={player.user_id}
-                    className="flex row items-center gap-5 "
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
                     <Button
-                      className={`${playerNameStyles[player.number]} ${
-                        messageBubbleStyles[player.number]
-                      } px-10 min-w-45`}
                       onClick={() => handleVote(player.user_id)}
+                      className={`flex items-center justify-center rounded-lg w-auto h-auto shadow-xl mx-2 mb-2  ${
+                        messageBubbleStyles[player.number]
+                      }`}
                     >
-                      {player.game_name}
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <img
+                          src={`/avatars/Cute-portraits_${player.avatar}.png`}
+                          className="rounded-full h-14 w-14 ring shadow-xs"
+                        />
+                        <p className={`text-foreground`}>{player.game_name}</p>
+                      </div>
                     </Button>
-                  </div>
+                  </motion.div>
                 )
               )}
             </div>
-          </Card>
+          </motion.div>
         </div>
       )}
     </div>

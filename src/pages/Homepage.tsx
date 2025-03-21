@@ -44,7 +44,7 @@ const Homepage = () => {
   };
 
   return (
-    <motion.div className="flex flex-1 flex-col px-4 justify-center items-center gap-7 mt-20 font-jersey text-2xl text-center">
+    <motion.div className="flex flex-1 flex-col px-4 justify-center items-center gap-7 pt-20 font-jersey text-2xl text-center">
       <motion.div // Pulsating effect
         initial={{ scale: 1, opacity: 1 }}
         animate={{ scale: [1, 1.01, 1], opacity: [1, 0.95, 1] }}
@@ -92,8 +92,13 @@ const Homepage = () => {
       </motion.div>
       <div
         className={
-          "bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-75"
+          "bg-[var(--gradient)] h-screen w-screen  rounded-full absolute -z-1 blur-3xl opacity-75"
         }
+        style={{
+          height:
+            "calc(100vh + env(safe-area-inset-top) + env(safe-area-inset-bottom))",
+          width: "100vw",
+        }}
       />
       <p>3 humans, 1 AI.</p>
       <p>If the AI is voted out, all humans win.</p>

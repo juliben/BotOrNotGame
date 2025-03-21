@@ -21,7 +21,7 @@ const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(180);
+  const [countdown, setCountdown] = useState(300);
   const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10000);
   const [winner, setWinner] = useState(null);
@@ -293,7 +293,8 @@ const Room = () => {
     fetchParticipants(roomId, userId);
   }, [roomId, userId]);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (input === "") return;
     if (!userId) return;
 
@@ -509,9 +510,7 @@ const Room = () => {
   const myAvatar = namesWithIds.find((name) => name.user_id === userId)?.avatar;
 
   return (
-    <div
-      className={`flex flex-col p-4 min-h-screen max-h-screen bg-[#353b85] `}
-    >
+    <div className={`flex flex-col p-4 min-h-dvh bg-[#353b85] `}>
       {winner && <p>Winner: {winner.game_name}</p>}
       <p
         className={`self-end mb-3 font-press-start text-xs  ${
@@ -635,14 +634,16 @@ const Room = () => {
           isVoting ? " blur-xs pointer-events-none" : ""
         }`}
       >
-        <Input
-          placeholder="Type a message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <Button onClick={handleSendMessage} disabled={loading}>
-          Send
-        </Button>
+        <form onSubmit={handleSendMessage} className="flex gap-2">
+          <Input
+            placeholder="Type a message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <Button onClick={handleSendMessage} disabled={loading}>
+            Send
+          </Button>
+        </form>
         <Button onClick={() => setIsVoting(true)} disabled={loading}>
           Debug
         </Button>

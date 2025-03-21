@@ -15,17 +15,20 @@ import axios from "axios";
 import { ping } from "@/services/ping.ts";
 import { processVotes } from "@/services/processVotes.ts";
 import { getFirstMessageFromAi } from "@/services/getFirstMessageFromAi.ts";
-import { motion } from "motion/react";
+import { useAnimate, motion } from "motion/react";
 
 const Room = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(300);
+  const [countdown, setCountdown] = useState(10000);
   const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10000);
   const [winner, setWinner] = useState(null);
   const [votes, setVotes] = useState([]);
+  const [winnerScreenVisible, setWinnerScreenVisible] = useState(false);
+  const [scope, animate] = useAnimate();
+  const [animationStep2, setAnimationStep2] = useState(false);
 
   // To make sure the first message from the AI is only requested once
   const [sentFirstMessage, setSentFirstMessage] = useState(false);
@@ -237,6 +240,7 @@ const Room = () => {
               );
               winnerRef.current = winner;
               setWinner(winner);
+              setWinnerScreenVisible(true);
             }
             return updatedVotes;
           });
@@ -510,7 +514,7 @@ const Room = () => {
   const myAvatar = namesWithIds.find((name) => name.user_id === userId)?.avatar;
 
   return (
-    <div className={`flex flex-col p-4 min-h-dvh bg-[#353b85] `}>
+    <div className={`flex flex-col p-4 min-h-dvh max-h-dvh bg-[#353b85] `}>
       {winner && <p>Winner: {winner.game_name}</p>}
       <p
         className={`self-end mb-3 font-press-start text-xs  ${
@@ -520,8 +524,8 @@ const Room = () => {
         {countdown}
       </p>
       <Card
-        className={`flex-1 overflow-y-scroll mb-3 py-3 gap-3 bg-background ${
-          isVoting ? " blur-xs pointer-events-none" : ""
+        className={`flex-1 overflow-y-scroll  mb-3 py-3 gap-3 bg-background ${
+          isVoting || winnerScreenVisible ? " blur-xs pointer-events-none" : ""
         } `}
       >
         {playersMap[userId] && (
@@ -631,10 +635,10 @@ const Room = () => {
 
       <div
         className={`flex gap-2 mt-auto ${
-          isVoting ? " blur-xs pointer-events-none" : ""
+          isVoting || winnerScreenVisible ? " blur-xs pointer-events-none" : ""
         }`}
       >
-        <form onSubmit={handleSendMessage} className="flex gap-2">
+        <form onSubmit={handleSendMessage} className="flex gap-2 min-w-full">
           <Input
             placeholder="Type a message..."
             value={input}
@@ -643,10 +647,15 @@ const Room = () => {
           <Button onClick={handleSendMessage} disabled={loading}>
             Send
           </Button>
+          <Button
+            onClick={() => {
+              setWinnerScreenVisible(true);
+            }}
+            disabled={loading}
+          >
+            Debug
+          </Button>
         </form>
-        <Button onClick={() => setIsVoting(true)} disabled={loading}>
-          Debug
-        </Button>
       </div>
 
       {isVoting && (
@@ -686,6 +695,125 @@ const Room = () => {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {winnerScreenVisible && !animationStep2 && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          onClick={() => {
+            setWinnerScreenVisible(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 "
+        >
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start shadow-2xl">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, y: -50 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+            >
+              The chat voted for...
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [1], y: -50 }}
+              transition={{
+                duration: 1,
+                ease: "easeOut",
+                delay: 0.75,
+              }}
+              className="flex items-center flex-col gap-4"
+            >
+              <motion.img
+                animate={{ rotateY: [0, 1080] }}
+                transition={{ delay: 0.75, duration: 1.5, ease: "easeOut" }}
+                onAnimationComplete={() => {
+                  setAnimationStep2(true);
+                }}
+                src={`/avatars/Cute-portraits_05.png`}
+                alt="Winner's avatar"
+                className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
+              />
+              <p id="winner_name" className="text-xl">
+                Arkansas
+              </p>
+            </motion.div>
+
+            {/* <h1 className="text-3xl text-center text-red-400">
+              {winner.user_id === AI_USER_ID && "HUMANS WIN!"}
+              {winner.user_id !== AI_USER_ID && "HUMANS LOSE!"}
+            <h1>  */}
+          </div>
+        </motion.button>
+      )}
+
+      {winnerScreenVisible && animationStep2 && (
+        <button
+          onClick={() => {
+            {
+              setWinnerScreenVisible(false);
+              setAnimationStep2(false);
+            }
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 "
+        >
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start shadow-2xl">
+            <motion.p
+              initial={{ y: -50 }}
+              animate={{ opacity: 0, y: -100 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+            >
+              The chat voted for...
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 1, y: -50 }}
+              animate={{ y: -120 }}
+              transition={{
+                duration: 1,
+                ease: "easeOut",
+                delay: 0.75,
+              }}
+              className="flex items-center flex-col gap-4"
+            >
+              <motion.img
+                src={`/avatars/Cute-portraits_05.png`}
+                alt="Winner's avatar"
+                className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
+              />
+              <p id="winner_name" className="text-xl">
+                Arkansas
+              </p>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: [0, 1, 0, 1, 0, 1],
+                }}
+                transition={{
+                  delay: 1.75,
+                  ease: "linear",
+                  times: [0, 0.1, 0.2, 0.3, 0.4, 1],
+                }}
+                className="text-red-400"
+              >
+                NOT AN AI
+              </motion.p>
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: -100 }}
+              animate={{ opacity: 1, y: -100 }}
+              transition={{ delay: 2.75, duration: 0.25, ease: "easeOut" }}
+              onAnimationComplete={() => {
+                setTimeout(() => {
+                  setWinnerScreenVisible(false);
+                }, 3000);
+              }}
+              className="text-xl  text-center text-red-400"
+            >
+              HUMANS LOSE
+            </motion.h1>
+          </div>
+        </button>
       )}
     </div>
   );

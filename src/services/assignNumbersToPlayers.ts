@@ -3,7 +3,23 @@ import supabase from "../api/supabase";
 // Assign a number to each player (to be used as an identifier for the colors)
 // This function will be executed after addAIToRoom
 export const assignNumbersToPlayers = async (roomId: string) => {
-  console.log("assingNumbersToPlayers running");
+  // Check if the players have numbers
+
+  const { data: players, error: playersError } = await supabase
+    .from("players")
+    .select("number")
+    .eq("room_id", roomId);
+
+  if (playersError) {
+    console.error("Error fetching players:", playersError);
+    return;
+  }
+
+  if (players.every((player) => player.number !== null)) {
+    console.log("All players have numbers");
+    return;
+  }
+
   const numbers = [1, 2, 3, 4];
 
   // 2. Shuffle the array using the Fisher-Yates algorithm
@@ -20,6 +36,11 @@ export const assignNumbersToPlayers = async (roomId: string) => {
 
   if (error) {
     console.error("Error fetching human players:", error);
+    return;
+  }
+
+  if (!humanPlayers) {
+    console.error("No human players found");
     return;
   }
 

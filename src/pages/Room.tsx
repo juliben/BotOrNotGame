@@ -16,6 +16,7 @@ import { ping } from "@/services/ping.ts";
 import { processVotes } from "@/services/processVotes.ts";
 import { getFirstMessageFromAi } from "@/services/getFirstMessageFromAi.ts";
 import { useAnimate, motion } from "motion/react";
+import { assignNumbersToPlayers } from "@/services/assignNumbersToPlayers.ts";
 
 const Room = () => {
   const [input, setInput] = useState("");
@@ -57,6 +58,15 @@ const Room = () => {
       .sort();
     return sortedIds[0];
   };
+
+  useEffect(() => {
+    console.log("Running assingNumbersToPlayers");
+    try {
+      assignNumbersToPlayers(roomId);
+    } catch (error) {
+      console.error("Error assigning numbers to players:", error);
+    }
+  }, []);
 
   // Start pinging (online status)
   useEffect(() => {
@@ -493,21 +503,23 @@ const Room = () => {
   };
 
   const playerNameStyles = {
-    1: "text-[#99CCFF] ", // Light blue for player 1
-    2: "text-[#66FF66] ", // Light green for player 2
-    3: "text-[#FF6666] ", // Light red for player 3
-    4: "text-[#CC99CC] ", // Light purple for player 4
+    1: "text-[#B0AEE0] ", // Light blue for player 1
+    2: "text-[#A3C8F0] ", // Light green for player 2
+    3: "text-[#66E3DC] ", // Light red for player 3
+    4: "text-[#E6B3E6] ", // Light purple for player 4
   };
+
   const playerVoteStyles = {
-    1: "text-[#0066CC] font-medium", // Light blue for player 1
-    2: "text-[#006600] font-medium", // Light green for player 2
-    3: "text-[#990000] font-medium", // Light red for player 3
+    1: "text-[#B0AEE0] font-medium", // Light blue for player 1
+    2: "text-[#5C8BC0] font-medium", // Light green for player 2
+    3: "text-[#009BA0] font-medium", // Light red for player 3
     4: "text-[#660066] font-medium", // Light purple for player 4
   };
+
   const messageBubbleStyles = {
-    1: "bg-[#0066CC] text-white", // Dark blue for player 1
-    2: "bg-[#006600] text-white", // Dark green for player 2
-    3: "bg-[#990000] text-white", // Dark red for player 3
+    1: "bg-[#6A5ACD] text-white", // Dark blue for player 1
+    2: "bg-[#5C8BC0] text-white", // Dark green for player 2
+    3: "bg-[#009BA0] text-white", // Dark red for player 3
     4: "bg-[#660066] text-white", // Dark purple for player 4
   };
 
@@ -707,7 +719,7 @@ const Room = () => {
           }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 "
         >
-          <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start shadow-2xl">
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start ">
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1, y: -50 }}
@@ -735,15 +747,8 @@ const Room = () => {
                 alt="Winner's avatar"
                 className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
               />
-              <p id="winner_name" className="text-xl">
-                Arkansas
-              </p>
+              <p className="text-xl">{winner.game_name}</p>
             </motion.div>
-
-            {/* <h1 className="text-3xl text-center text-red-400">
-              {winner.user_id === AI_USER_ID && "HUMANS WIN!"}
-              {winner.user_id !== AI_USER_ID && "HUMANS LOSE!"}
-            <h1>  */}
           </div>
         </motion.button>
       )}
@@ -758,21 +763,20 @@ const Room = () => {
           }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 "
         >
-          <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start shadow-2xl">
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start">
             <motion.p
-              initial={{ y: -50 }}
+              initial={{ y: 0 }}
               animate={{ opacity: 0, y: -100 }}
               transition={{ duration: 1, ease: "easeOut" }}
             >
               The chat voted for...
             </motion.p>
             <motion.div
-              initial={{ opacity: 1, y: -50 }}
-              animate={{ y: -120 }}
+              initial={{ opacity: 1, y: 0 }}
+              animate={{ y: -130 }}
               transition={{
                 duration: 1,
                 ease: "easeOut",
-                delay: 0.75,
               }}
               className="flex items-center flex-col gap-4"
             >
@@ -781,9 +785,7 @@ const Room = () => {
                 alt="Winner's avatar"
                 className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
               />
-              <p id="winner_name" className="text-xl">
-                Arkansas
-              </p>
+              <p className="text-xl">{winner.game_name}</p>
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{
@@ -800,8 +802,8 @@ const Room = () => {
               </motion.p>
             </motion.div>
             <motion.h1
-              initial={{ opacity: 0, y: -100 }}
-              animate={{ opacity: 1, y: -100 }}
+              initial={{ opacity: 0, y: -120 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 2.75, duration: 0.25, ease: "easeOut" }}
               onAnimationComplete={() => {
                 setTimeout(() => {
@@ -810,7 +812,8 @@ const Room = () => {
               }}
               className="text-xl  text-center text-red-400"
             >
-              HUMANS LOSE
+              {winner.user_id === AI_USER_ID && "HUMANS WIN!"}
+              {winner.user_id !== AI_USER_ID && "HUMANS LOSE!"}
             </motion.h1>
           </div>
         </button>

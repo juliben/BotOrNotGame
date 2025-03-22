@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@radix-ui/react-label";
 import { Icons } from "@/components/ui/spinner";
-import axios from "axios";
 
 import { IoDice } from "react-icons/io5";
 

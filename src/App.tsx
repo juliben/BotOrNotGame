@@ -13,6 +13,7 @@ import ChooseName from "./pages/ChooseName";
 import { AnimatePresence } from "motion/react";
 import TestScreen from "./pages/test";
 import TestScreen2 from "./pages/test2";
+import Room2 from "./pages/Room copy";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -26,6 +27,7 @@ const AnimatedRoutes = () => {
         <Route path="/room/:roomId" element={<Room />} />
         <Route path="/test/:userId" element={<TestScreen />} />
         <Route path="/test2" element={<TestScreen2 />} />
+        <Route path="/room2" element={<Room2 />} />
       </Routes>
     </AnimatePresence>
   );

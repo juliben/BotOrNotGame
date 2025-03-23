@@ -303,10 +303,6 @@ const Room = () => {
     };
   }, [roomId]);
 
-  useEffect(() => {
-    fetchParticipants(roomId, userId);
-  }, [roomId, userId]);
-
   const handleSendMessage = async (event: React.FormEvent) => {
     event.preventDefault();
     if (input === "") return;
@@ -503,17 +499,17 @@ const Room = () => {
   };
 
   const playerNameStyles = {
-    1: "text-[#B0AEE0] ", // Light blue for player 1
-    2: "text-[#A3C8F0] ", // Light green for player 2
-    3: "text-[#66E3DC] ", // Light red for player 3
+    1: "text-[#E0D9F7] ", // Light blue for player 1
+    2: "text-[#D0E8F8] ", // Light green for player 2
+    3: "text-[#A0F1F5] ", // Light red for player 3
     4: "text-[#E6B3E6] ", // Light purple for player 4
   };
 
   const playerVoteStyles = {
-    1: "text-[#B0AEE0] font-medium", // Light blue for player 1
-    2: "text-[#5C8BC0] font-medium", // Light green for player 2
-    3: "text-[#009BA0] font-medium", // Light red for player 3
-    4: "text-[#660066] font-medium", // Light purple for player 4
+    1: "text-[#E0D9F7] font-medium", // Light blue for player 1
+    2: "text-[#D0E8F8] font-medium", // Light green for player 2
+    3: "text-[#A0F1F5] font-medium", // Light red for player 3
+    4: "text-[#E6B3E6] font-medium", // Light purple for player 4
   };
 
   const messageBubbleStyles = {
@@ -535,6 +531,7 @@ const Room = () => {
       >
         {countdown}
       </p>
+      <button onClick={() => setIsVoting(true)}>Debug</button>
       <Card
         className={`flex-1 overflow-y-scroll  mb-3 py-3 gap-3 bg-background ${
           isVoting || winnerScreenVisible ? " blur-xs pointer-events-none" : ""
@@ -659,14 +656,6 @@ const Room = () => {
           <Button onClick={handleSendMessage} disabled={loading}>
             Send
           </Button>
-          <Button
-            onClick={() => {
-              setWinnerScreenVisible(true);
-            }}
-            disabled={loading}
-          >
-            Debug
-          </Button>
         </form>
       </div>
 
@@ -709,7 +698,7 @@ const Room = () => {
         </div>
       )}
 
-      {winnerScreenVisible && !animationStep2 && (
+      {winner && winnerScreenVisible && !animationStep2 && (
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -743,17 +732,16 @@ const Room = () => {
                 onAnimationComplete={() => {
                   setAnimationStep2(true);
                 }}
-                src={`/avatars/Cute-portraits_05.png`}
+                src={`/avatars/Cute-portraits_${winner.avatar}.png`}
                 alt="Winner's avatar"
                 className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
               />
-              <p className="text-xl">{winner.game_name}</p>
             </motion.div>
           </div>
         </motion.button>
       )}
 
-      {winnerScreenVisible && animationStep2 && (
+      {winner && winnerScreenVisible && animationStep2 && (
         <button
           onClick={() => {
             {
@@ -781,7 +769,7 @@ const Room = () => {
               className="flex items-center flex-col gap-4"
             >
               <motion.img
-                src={`/avatars/Cute-portraits_05.png`}
+                src={`/avatars/Cute-portraits_${winner.avatar}.png`}
                 alt="Winner's avatar"
                 className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
               />
@@ -798,23 +786,46 @@ const Room = () => {
                 }}
                 className="text-red-400"
               >
-                NOT AN AI
+                {winner.user_id === AI_USER_ID && "AI DETECTED"}
+                {winner.user_id !== AI_USER_ID && "NOT AN AI"}
               </motion.p>
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: -120 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 2.75, duration: 0.25, ease: "easeOut" }}
-              onAnimationComplete={() => {
-                setTimeout(() => {
-                  setWinnerScreenVisible(false);
-                }, 3000);
-              }}
               className="text-xl  text-center text-red-400"
             >
+              {winner.user_id === userId && "YOU WIN!"}
               {winner.user_id === AI_USER_ID && "HUMANS WIN!"}
               {winner.user_id !== AI_USER_ID && "HUMANS LOSE!"}
             </motion.h1>
+            <motion.button
+              initial={{ opacity: 0, y: -110 }}
+              animate={{ opacity: 1, y: -110 }}
+              transition={{ delay: 4 }}
+              className="
+  relative
+  bg-[#F11493]         /* Vibrant cyberpunk pink background */
+  text-white
+  font-mono
+  border-4
+  border-[#FF40DA]      /* Neon purple-pink border */
+  px-5
+  py-2
+  uppercase
+  tracking-wider
+  rounded-none          /* No rounding for a pixelated feel */
+  hover:bg-[#FF40DA]    /* On hover, swap background to neon purple-pink */
+  active:bg-[#FF86D4]   /* On click/active, lighten it a bit */
+  focus:outline-none
+  transition-all
+  shadow-[0_0_8px_#FF40DA]  /* Subtle neon glow shadow */
+  hover:shadow-[0_0_12px_#FF40DA]
+"
+            >
+              Return
+            </motion.button>
           </div>
         </button>
       )}

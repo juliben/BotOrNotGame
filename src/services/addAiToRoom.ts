@@ -1,6 +1,5 @@
 import supabase from "../api/supabase";
 import { AI_USER_ID } from "../../constants.ts";
-import { generateNameForAi } from "./generateNameForAi";
 
 // import { assignNumbersToPlayers } from "./assignNumbersToPlayers.ts";
 
@@ -34,9 +33,6 @@ export const addAIToRoom = async (roomId: string) => {
     }
 
     console.log("AI added to the room, player:", updateData[0].players);
-
-    await generateNameForAi();
-    // await assignNumbersToPlayers(roomId);
 
     // Set room to full
     const { data: updateData2, error: updateError2 } = await supabase

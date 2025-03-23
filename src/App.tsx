@@ -5,7 +5,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import Homepage from "./pages/Homepage";
-import Lobby from "./pages/Lobby";
+// import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
 import LanguageProvider from "./context/LanguageContext";
 import { ThemeProvider } from "./context/theme-provider";
@@ -13,7 +13,6 @@ import ChooseName from "./pages/ChooseName";
 import { AnimatePresence } from "motion/react";
 import TestScreen from "./pages/test";
 import TestScreen2 from "./pages/test2";
-import Room2 from "./pages/Room copy";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -23,11 +22,10 @@ const AnimatedRoutes = () => {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Homepage />} />
         <Route path="/choose-name" element={<ChooseName />} />
-        <Route path="/lobby" element={<Lobby />} />
+        {/* <Route path="/lobby" element={<Lobby />} /> */}
         <Route path="/room/:roomId" element={<Room />} />
         <Route path="/test/:userId" element={<TestScreen />} />
         <Route path="/test2" element={<TestScreen2 />} />
-        <Route path="/room2" element={<Room2 />} />
       </Routes>
     </AnimatePresence>
   );

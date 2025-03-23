@@ -5,7 +5,6 @@ import { ping } from "@/services/ping";
 import { queryRooms } from "@/services/queryRooms";
 import supabase from "@/api/supabase";
 import { fetchReadyPlayers } from "@/services/fetchReadyPlayers";
-import { addAIToRoom } from "@/services/addAiToRoom";
 import { AI_USER_ID } from "../../constants";
 import omit from "lodash/omit";
 import isEqual from "lodash/isEqual";
@@ -51,6 +50,15 @@ const TestScreen = ({}) => {
   useEffect(() => {
     const initalRoomQuery = async () => {
       const roomId = await queryRooms(userId);
+
+      // Update room_id of current player
+      const { error } = await supabase
+        .from("players")
+        .update({ room_id: roomId })
+        .eq("user_id", userId);
+      if (error) {
+        console.log("Error updating player:", error);
+      }
       setRoomId(roomId);
     };
 
@@ -77,6 +85,7 @@ const TestScreen = ({}) => {
           game_name: player.game_name,
           avatar: player.avatar,
           user_id: player.user_id,
+          is_ai: player.is_ai,
         };
         return acc; // Return the accumulator!
       }, {}); // Provide an initial empty object
@@ -147,27 +156,6 @@ const TestScreen = ({}) => {
   }, [roomId]);
 
   // After there's 3 players, fetchPlayers to determine who is the first in the array (this person will be responsible of adding the AI to the room)
-
-  // Listen for when the room is full
-  useEffect(() => {
-    if (!roomId) {
-      return;
-    }
-    if (readyCount === 4 && !aiAdded) {
-      if (Object.keys(playersMap)[0] === userId) {
-        console.log("I am the first participant, adding AI to the room");
-        addAIToRoom(roomId);
-        setAiAdded(true);
-      }
-    }
-  }, [readyCount]);
-
-  // Fetch the AI player (payload doesn't work because it's filtering by room_id)
-  useEffect(() => {
-    if (aiAdded) {
-      fetchPlayers();
-    }
-  }, [aiAdded]);
 
   useEffect(() => {
     if (readyCount === 4) {

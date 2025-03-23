@@ -26,7 +26,8 @@ export const fetchParticipantNames = async (roomId: string) => {
     const { data: aiName, error: aiNameError } = await supabase
       .from("players")
       .select("game_name, avatar")
-      .eq("user_id", AI_USER_ID)
+      .eq("is_ai", true)
+      .eq("room_id", roomId)
       .single();
 
     if (aiNameError) {

@@ -1,4 +1,5 @@
 import supabase from "@/api/supabase";
+import { createAiPlayer } from "./createAiPlayer";
 
 export const queryRooms = async (userId) => {
   const { data: rooms, error } = await supabase
@@ -30,8 +31,8 @@ export const queryRooms = async (userId) => {
 
     console.log("Joined room:", roomId);
 
-    // Change room full status to true if there are 3 players
-    if (updatedPlayers.length === 3) {
+    // Change room full status to true if there are 4 players
+    if (updatedPlayers.length === 4) {
       const { error: updateFullError } = await supabase
         .from("rooms")
         .update({ status: "full" })
@@ -42,24 +43,6 @@ export const queryRooms = async (userId) => {
         return;
       }
     }
-
-    /// Update 'room_id' in the players table for the current user, with the current room id
-
-    const { error: playerRoomIdError } = await supabase
-      .from("players")
-      .update({ room_id: roomId })
-      .eq("user_id", userId);
-
-    if (playerRoomIdError) {
-      console.log("Error updating player room ID:", playerRoomIdError);
-      return;
-    }
-
-    if (!rooms) {
-      console.log("Room not found:", roomId);
-      return;
-    }
-    console.log("Updated player's room ID column:", roomId);
   } else {
     const { data: newRoom, error } = await supabase
       .from("rooms")
@@ -77,20 +60,48 @@ export const queryRooms = async (userId) => {
     roomId = newRoom.id;
     console.log("Created room:", roomId);
 
-    const { error: playerRoomIdError } = await supabase
+    // Create AI player
+    const aiPlayer = await createAiPlayer(roomId);
+    console.log("Created AI player:", aiPlayer);
+
+    const { data: aiUserId, error: aiUserIdError } = await supabase
       .from("players")
-      .update({ room_id: roomId })
-      .eq("user_id", userId);
+      .select("user_id")
+      .eq("is_ai", true)
+      .eq("room_id", roomId)
+      .single();
 
-    if (playerRoomIdError) {
-      console.log("Error updating player room ID:", playerRoomIdError);
+    if (aiUserIdError) {
+      console.log("Error fetching AI user ID:", aiUserIdError);
+      return;
+    }
+    console.log("AI user ID:", aiUserId);
+
+    // Add AI to rooms table
+
+    const { data: roomPlayers, error: roomPlayersError } = await supabase
+      .from("rooms")
+      .select("players")
+      .eq("id", roomId)
+      .single();
+
+    if (roomPlayersError) {
+      console.log("Error fetching room players:", roomPlayersError);
+      return;
+    }
+    console.log("Room players:", roomPlayers);
+
+    const { error: addAiError } = await supabase
+      .from("rooms")
+      .update({ players: [...roomPlayers.players, aiUserId.user_id] })
+      .eq("id", roomId);
+
+    if (addAiError) {
+      console.log("Error adding AI to room:", addAiError);
       return;
     }
 
-    if (!rooms) {
-      console.log("Room not found:", roomId);
-      return;
-    }
+    console.log("Added AI to room:", roomId);
   }
 
   return roomId;

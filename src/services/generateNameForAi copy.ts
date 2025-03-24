@@ -3,6 +3,7 @@ import axios from "axios";
 import supabase from "../api/supabase";
 import { getFirstName } from "./getFirstName";
 
+
 // Generates name and avatar for the AI
 export const generateNameForAi = async () => {
   try {

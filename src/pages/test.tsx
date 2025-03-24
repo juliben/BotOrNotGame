@@ -5,9 +5,9 @@ import { ping } from "@/services/ping";
 import { queryRooms } from "@/services/queryRooms";
 import supabase from "@/api/supabase";
 import { fetchReadyPlayers } from "@/services/fetchReadyPlayers";
-import { AI_USER_ID } from "../../constants";
 import omit from "lodash/omit";
 import isEqual from "lodash/isEqual";
+import { assignNumbersToPlayers } from "@/services/assignNumbersToPlayers";
 
 const TestScreen = ({}) => {
   const navigate = useNavigate();
@@ -17,7 +17,6 @@ const TestScreen = ({}) => {
   const [roomFull, setRoomFull] = useState(false);
   const [playersMap, setPlayersMap] = useState([{}]);
   const [isRevealed, setIsRevealed] = useState(false);
-  const [aiAdded, setAiAdded] = useState(false);
 
   // To reveal the player's avatars when starting the game
   useEffect(() => {
@@ -46,7 +45,7 @@ const TestScreen = ({}) => {
     };
   }, []);
 
-  // Query rooms
+  // Query rooms & update room_id in 'players' table
   useEffect(() => {
     const initalRoomQuery = async () => {
       const roomId = await queryRooms(userId);
@@ -69,6 +68,7 @@ const TestScreen = ({}) => {
     fetchPlayers();
   }, [roomId]);
 
+  // This updates the playersMap and the ready count state
   const fetchPlayers = async () => {
     fetchReadyPlayers(roomId).then(({ data, count }) => {
       if (count) {
@@ -78,17 +78,11 @@ const TestScreen = ({}) => {
       if (!data) {
         return;
       }
-      console.log("Players: ", data);
 
       const players = data.reduce((acc, player) => {
-        acc[player.user_id] = {
-          game_name: player.game_name,
-          avatar: player.avatar,
-          user_id: player.user_id,
-          is_ai: player.is_ai,
-        };
-        return acc; // Return the accumulator!
-      }, {}); // Provide an initial empty object
+        acc[player.user_id] = player;
+        return acc;
+      }, {});
 
       setPlayersMap(players);
     });
@@ -113,11 +107,6 @@ const TestScreen = ({}) => {
         },
         async (payload) => {
           // To check if the payload is just because of pings
-
-          // Skip the AI being added (it's already fetched even if not added to room yet)
-          if (payload.new.user_id === AI_USER_ID) {
-            return;
-          }
           if (payload.eventType === "UPDATE" && payload.old && payload.new) {
             const oldData = omit(payload.old, "last_seen");
             const newData = omit(payload.new, "last_seen");
@@ -126,19 +115,8 @@ const TestScreen = ({}) => {
               return;
             }
           }
-
-          // Re-fetch the ready count
-          const { count, error } = await supabase
-            .from("players")
-            .select("*", { count: "exact" })
-            .eq("room_id", roomId)
-            .eq("is_ready", true)
-            .eq("is_online", true);
-
-          if (!error) {
-            setReadyCount(count);
-            fetchPlayers();
-          }
+          // There's been a legit change -> Refetch
+          fetchPlayers();
         }
       )
 
@@ -155,11 +133,18 @@ const TestScreen = ({}) => {
     };
   }, [roomId]);
 
-  // After there's 3 players, fetchPlayers to determine who is the first in the array (this person will be responsible of adding the AI to the room)
-
   useEffect(() => {
+    // Check if the room is full
     if (readyCount === 4) {
       setRoomFull(true);
+
+      // Assign color numbers to players
+      console.log("Running assingNumbersToPlayers");
+      try {
+        assignNumbersToPlayers(roomId);
+      } catch (error) {
+        console.error("Error assigning numbers to players:", error);
+      }
 
       setTimeout(() => {
         navigate(`/room/${roomId}`);

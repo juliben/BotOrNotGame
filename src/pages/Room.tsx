@@ -59,14 +59,8 @@ const Room = () => {
     return sortedIds[0];
   };
 
-  useEffect(() => {
-    console.log("Running assingNumbersToPlayers");
-    try {
-      assignNumbersToPlayers(roomId);
-    } catch (error) {
-      console.error("Error assigning numbers to players:", error);
-    }
-  }, []);
+
+
 
   // Start pinging (online status)
   useEffect(() => {
@@ -135,7 +129,7 @@ const Room = () => {
     if (leaderId !== userId) {
       return;
     }
-    const aiUser = namesWithIds.find((name) => name.user_id === AI_USER_ID);
+    const aiUser = namesWithIds.find((name) => name.is_ai === true);
     if (!aiUser) {
       console.log("AI user not found (getFirstMessageFromAi)");
       return;
@@ -290,6 +284,7 @@ const Room = () => {
             is_vote: payload.new.is_vote,
             is_from_server: payload.new.is_from_server,
             avatar: payload.new.avatar,
+            is_ai: payload.new.is_ai,
           };
           console.log("Received payload message: " + newMessage.message);
           setMessages((messages) => [...messages, newMessage]);
@@ -334,7 +329,7 @@ const Room = () => {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const sendMessagesToAi = async () => {
-    const aiUser = namesWithIds.find((name) => name.user_id === AI_USER_ID);
+    const aiUser = namesWithIds.find((name) => name.is_ai === true);
     if (!aiUser) return;
     const aiName = aiUser.game_name;
 

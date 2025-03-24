@@ -1,5 +1,4 @@
 import supabase from "@/api/supabase";
-import { AI_USER_ID } from "../../constants";
 
 // Fetch the current count of ready players in the room
 export const fetchReadyPlayers = async (roomId) => {

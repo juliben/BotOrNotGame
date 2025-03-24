@@ -59,7 +59,7 @@ const ChooseName = () => {
       console.log("Error updating player:", error);
     }
 
-    navigate("/test/" + userId);
+    navigate("/lobby/" + userId);
   };
 
   const getName = () => {

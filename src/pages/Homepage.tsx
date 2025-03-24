@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 import { useNavigate } from "react-router-dom";
 import supabase from "@/api/supabase";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 
 const Homepage = () => {
   const navigate = useNavigate();
@@ -29,18 +29,15 @@ const Homepage = () => {
     const { data, error } = await supabase
       .from("players")
       .select("is_online")
-      .eq("is_online", true);
+      .eq("is_online", true)
+      .eq("is_ai", false);
     if (error) {
       console.error("Error fetching online players:", error);
-    } else {
-      console.log("Online players:", data.length - 1);
     }
-
     if (!data) {
       return;
     }
-    // (Minus 1 because 1 is the AI)
-    setOnlinePlayers(data.length - 1);
+    setOnlinePlayers(data.length);
   };
 
   return (

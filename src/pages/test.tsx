@@ -134,6 +134,9 @@ const TestScreen = ({}) => {
   }, [roomId]);
 
   useEffect(() => {
+    if (readyCount < 4) {
+      return;
+    }
     // Check if the room is full
     if (readyCount === 4) {
       setRoomFull(true);
@@ -147,10 +150,10 @@ const TestScreen = ({}) => {
       }
 
       setTimeout(() => {
-        navigate(`/room/${roomId}`);
+        navigate(`/room/${roomId}`, { state: { playersMap } });
       }, 1500);
     }
-  });
+  }, [readyCount]);
 
   return (
     <div className="flex flex-col flex-1 p-4 px-6 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center">

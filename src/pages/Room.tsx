@@ -1,22 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
+import supabase from "../api/supabase";
+import { motion } from "motion/react";
+
+import {
+  flipCoin,
+  getUserId,
+  sendMessagesToAi,
+  getFirstMessageFromAi,
+  processVotes,
+  ping,
+} from "../services/";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import supabase from "../api/supabase";
-import { shuffle } from "lodash";
-import flipCoin from "@/services/flipCoin.ts";
 
-import { getUserId } from "@/services/getUserId.ts";
-import { fetchParticipants } from "@/services/fetchParticipants.ts";
-import { fetchParticipantNames } from "@/services/fetchParticipantNames.ts";
-import { AI_USER_ID } from "../../constants.ts";
-import axios from "axios";
-import { ping } from "@/services/ping.ts";
-import { processVotes } from "@/services/processVotes.ts";
-import { getFirstMessageFromAi } from "@/services/getFirstMessageFromAi.ts";
-import { useAnimate, motion } from "motion/react";
-import { assignNumbersToPlayers } from "@/services/assignNumbersToPlayers.ts";
+import { User } from "../../types.ts";
 
 const Room = () => {
   const [input, setInput] = useState("");
@@ -28,7 +28,6 @@ const Room = () => {
   const [winner, setWinner] = useState(null);
   const [votes, setVotes] = useState([]);
   const [winnerScreenVisible, setWinnerScreenVisible] = useState(false);
-  const [scope, animate] = useAnimate();
   const [animationStep2, setAnimationStep2] = useState(false);
 
   // To make sure the first message from the AI is only requested once
@@ -44,23 +43,33 @@ const Room = () => {
 
   const [shuffledNames, setShuffledNames] = useState([]);
   const roomId = useParams().roomId;
-  const [playersMap, setPlayersMap] = useState({});
   const [userId, setUserId] = useState(null);
+
+  const location = useLocation();
+  const { playersMap } = location.state as { playersMap: any };
+  const aiUserRef = useRef(null);
+  const leaderRef = useRef<string | null>(null);
 
   // Get a delegated user to send requests
   const getLeaderId = () => {
-    if (!namesWithIdsRef.current || namesWithIdsRef.current.length === 0)
-      return null;
     // Map to IDs and sort them lexicographically
-    const sortedIds = namesWithIdsRef.current
-      .map((user) => user.user_id)
-      .filter((id) => id !== "51fa8d86-ff0e-45ad-b4a0-06c3b8fdab93")
-      .sort();
-    return sortedIds[0];
+    const sortedIds = Object.keys(playersMap).sort();
+    leaderRef.current = sortedIds[0];
   };
 
+  // Get the AI user ID and save a ref
+  useEffect(() => {
+    console.log("Players map: ", playersMap);
 
-
+    const getAiUser = () => {
+      const aiUserKey = Object.keys(playersMap).find(
+        (key) => playersMap[key].is_ai === true
+      );
+      return aiUserKey ? playersMap[aiUserKey] : null;
+    };
+    aiUserRef.current = getAiUser();
+    console.log("AI user: ", aiUserRef.current);
+  }, []);
 
   // Start pinging (online status)
   useEffect(() => {
@@ -95,32 +104,36 @@ const Room = () => {
 
   // Get responses from AI
   useEffect(() => {
-    if (
-      messages.length === 0 ||
-      (messages.length === 1 && messages[0].sender === AI_USER_ID)
-    ) {
+    if (!aiUserRef.current || !roomId) {
+      console.log("AI or roomId not found (sendMessagesToAi)");
+      return;
+    }
+    if (leaderRef.current !== userId) {
       return;
     }
 
     if (
-      messages.length > 1 &&
-      messages[messages.length - 1].sender === AI_USER_ID
+      messages.length === 0 ||
+      (messages.length === 1 && messages[0].is_ai === true)
     ) {
+      return;
+    }
+
+    if (messages.length > 1 && messages[messages.length - 1].is_ai === true) {
       console.log("Last message was from AI");
       return;
     }
 
-    const leaderId = getLeaderId();
-    if (leaderId !== userId) {
-      return;
-    }
-
     console.log("Sending messages to AI");
-    sendMessagesToAi();
+    sendMessagesToAi(roomId, messages, aiUserRef.current);
   }, [messages]);
 
   // First message from AI?
   useEffect(() => {
+    if (!aiUserRef.current) {
+      console.log("AI user not found");
+      return;
+    }
     if (sentFirstMessage) {
       console.log("Already sent first message");
       return;
@@ -129,16 +142,11 @@ const Room = () => {
     if (leaderId !== userId) {
       return;
     }
-    const aiUser = namesWithIds.find((name) => name.is_ai === true);
-    if (!aiUser) {
-      console.log("AI user not found (getFirstMessageFromAi)");
-      return;
-    }
     if (!flipCoin()) {
       console.log("Skipping first message from AI");
       return;
     }
-    getFirstMessageFromAi(aiUser.game_name, aiUser.avatar, roomId);
+    getFirstMessageFromAi(roomId, aiUserRef.current);
     setSentFirstMessage(true);
   }, [namesWithIds, roomId]);
 
@@ -325,77 +333,6 @@ const Room = () => {
       console.log("Error sending message:", error);
     }
   };
-  // Utility function to return a promise that resolves after a given delay.
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-  const sendMessagesToAi = async () => {
-    const aiUser = namesWithIds.find((name) => name.is_ai === true);
-    if (!aiUser) return;
-    const aiName = aiUser.game_name;
-
-    try {
-      const response = await axios.post("http://localhost:3000/spanish", {
-        messages,
-      });
-
-      const isAppropriate =
-        response.data.shouldRespond === true && response.data.confidence >= 0.7;
-
-      if (!isAppropriate) {
-        console.log("AI response is not appropriate, skipping...");
-        return;
-      }
-      /// Split the response into sentences to appear more human
-      let initialSentences = response.data.response.split(/(?<=[.?!"])\s+/);
-
-      let sentences = initialSentences.flatMap((sentence) => {
-        // More casual spelling
-        sentence = sentence
-          .trim()
-          .replace(/[¿¡]/g, "") // remove all ¿ and ¡ characters
-          .replace(/[.!"]$/, ""); // then remove trailing punctuation if needed
-
-        // 50% chance of 'haha' or 'jaja' sent in a different message
-        if (flipCoin()) {
-          return sentence
-            .split(/(\b(?:haha|jaja)\b)(?=\s*$)/gi)
-            .map((part) => part.trim())
-            .filter((part) => part.length > 0);
-        } else {
-          return [sentence];
-        }
-      });
-
-      // Process each sentence sequentially.
-      for (const sentence of sentences) {
-        // Calculate the delay for this sentence (e.g., 50ms per character)
-        const sentenceDelay = sentence.length * 50;
-        console.log(
-          `Waiting ${sentenceDelay}ms before sending sentence: "${sentence}"`
-        );
-
-        // Wait for the delay.
-        await delay(sentenceDelay);
-
-        // Now insert the sentence.
-        const { error } = await supabase.from("messages").insert({
-          sender_id: AI_USER_ID,
-          content: sentence,
-          game_name: aiName,
-          room_id: roomId,
-          avatar: aiUser.avatar,
-        });
-        if (error) {
-          console.log("Error sending sentence to Supabase:", error);
-        }
-      }
-    } catch (error) {
-      if (error.status === 429) {
-        console.log("Another AI request in progress.");
-      }
-      console.log("Error sending message to AI:", error);
-    }
-  };
 
   const handleVote = async (voted) => {
     try {
@@ -444,32 +381,6 @@ const Room = () => {
       console.log("Error sending vote message:", error);
     }
   };
-
-  useEffect(() => {
-    const fetchPlayerNamesAndIds = async () => {
-      const players = await fetchParticipantNames(roomId);
-      console.log("Fetching players names and ids, players: ", players);
-
-      // Only update state if every player's number is set (non-null)
-      if (players.every((player) => player.number !== null)) {
-        namesWithIdsRef.current = players;
-        setNamesWithIds(players);
-        setShuffledNames(shuffle(players));
-        const map = players.reduce((acc, player) => {
-          acc[player.user_id] = player.number;
-          return acc;
-        }, {});
-        setPlayersMap(map);
-        clearInterval(intervalId);
-      }
-    };
-
-    // Poll every 500 milliseconds
-    const intervalId = setInterval(fetchPlayerNamesAndIds, 500);
-
-    // Cleanup polling when component unmounts
-    return () => clearInterval(intervalId);
-  }, []);
 
   const startVotingTimer = () => {
     votesTimerRef.current = setTimeout(() => {

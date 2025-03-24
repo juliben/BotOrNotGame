@@ -1,20 +1,31 @@
 import supabase from "../api/supabase";
 import axios from "axios";
 import { flipCoin } from "./flipCoin";
-import { User } from "../../types.ts";
+import { Message } from "types";
 
-export const getFirstMessageFromAi = async (aiUser: User, roomId: string) => {
+// Utility function to return a promise that resolves after a given delay.
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Send request to API, then process the response, and insert into Supabase
+export const sendMessagesToAi = async (
+  roomId: string,
+  messages: Message[],
+  aiUser: any
+) => {
   try {
-    console.log("Getting first message from AI");
-    const response = await axios.get(
-      "http://localhost:3000/first-message-spanish"
-    );
-    console.log("Response from AI:", response.data);
+    const response = await axios.post("http://localhost:3000/spanish", {
+      messages,
+    });
 
-    // / Split the response into sentences to appear more human
-    let initialSentences = response.data.split(/(?<=[.?!"])\s+/);
+    const isAppropriate =
+      response.data.shouldRespond === true && response.data.confidence >= 0.7;
 
-    console.log("Initial sentences:", initialSentences);
+    if (!isAppropriate) {
+      console.log("AI response is not appropriate, skipping...");
+      return;
+    }
+    /// Split the response into sentences to appear more human
+    let initialSentences = response.data.response.split(/(?<=[.?!"])\s+/);
 
     let sentences = initialSentences.flatMap((sentence) => {
       // More casual spelling
@@ -25,42 +36,42 @@ export const getFirstMessageFromAi = async (aiUser: User, roomId: string) => {
 
       // 50% chance of 'haha' or 'jaja' sent in a different message
       if (flipCoin()) {
-        console.log("Sentence: ", sentence);
         return sentence
           .split(/(\b(?:haha|jaja)\b)(?=\s*$)/gi)
           .map((part) => part.trim())
           .filter((part) => part.length > 0);
       } else {
-        console.log("Sentence: ", sentence);
         return [sentence];
       }
     });
 
-    // // Process each sentence sequentially.
+    // Process each sentence sequentially.
     for (const sentence of sentences) {
-      //   // Calculate the delay for this sentence (e.g., 50ms per character)
+      // Calculate the delay for this sentence (e.g., 50ms per character)
       const sentenceDelay = sentence.length * 50;
       console.log(
         `Waiting ${sentenceDelay}ms before sending sentence: "${sentence}"`
       );
 
-      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      // // Wait for the delay.
+      // Wait for the delay.
       await delay(sentenceDelay);
 
       // Now insert the sentence.
       const { error } = await supabase.from("messages").insert({
-        room_id: roomId,
         sender_id: aiUser.user_id,
-        game_name: aiUser.game_name,
-        avatar: aiUser.avatar,
         content: sentence,
+        game_name: aiUser.game_name,
+        room_id: roomId,
+        avatar: aiUser.avatar,
       });
       if (error) {
         console.log("Error sending sentence to Supabase:", error);
       }
     }
-  } catch {
-    console.log("Error getting first message from AI");
+  } catch (error) {
+    if (error.status === 429) {
+      console.log("Another AI request in progress.");
+    }
+    console.log("Error sending message to AI:", error);
   }
 };

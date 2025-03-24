@@ -15,6 +15,7 @@ export const assignNumbersToPlayers = async (roomId: string) => {
     return;
   }
 
+  // This might cause a bug where 2 players have the same number
   if (players.every((player) => player.number !== null)) {
     console.log("All players have numbers");
     return;
@@ -28,24 +29,21 @@ export const assignNumbersToPlayers = async (roomId: string) => {
     [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
   }
 
-  // 3. Fetch the 3 human players (those with a valid room_id)
-  const { data: humanPlayers, error } = await supabase
+  const { data, error } = await supabase
     .from("players")
     .select("user_id")
     .eq("room_id", roomId);
 
   if (error) {
-    console.error("Error fetching human players:", error);
+    console.error("Error fetching players:", error);
+    return;
+  }
+  if (!data) {
+    console.error("No players found");
     return;
   }
 
-  if (!humanPlayers) {
-    console.error("No human players found");
-    return;
-  }
-
-  // Assuming humanPlayers always has 3 entries:
-  const updatePromises = humanPlayers.map((player, index) =>
+  const updatePromises = data.map((player, index) =>
     supabase
       .from("players")
       .update({ number: numbers[index] })

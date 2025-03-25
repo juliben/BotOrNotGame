@@ -9,6 +9,7 @@ import omit from "lodash/omit";
 import isEqual from "lodash/isEqual";
 import { assignNumbersToPlayers } from "@/services/assignNumbersToPlayers";
 import { fetchPlayers } from "@/services";
+import PlayersRow from "@/components/PlayersRow";
 
 const TestScreen = ({}) => {
   const navigate = useNavigate();
@@ -160,9 +161,6 @@ const TestScreen = ({}) => {
     }
   }, [readyCount]);
 
-  // Random numbers for anon avatar
-  const anonNumber = Math.floor(Math.random() * 9) + 1;
-
   return (
     <div className="flex flex-col flex-1 p-4 px-6 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center">
       <div className="bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-50 top-0 left-0" />
@@ -197,33 +195,8 @@ const TestScreen = ({}) => {
         </div>
         <ul className={"flex flex-row gap-5 "}>
           {playersMap &&
-            Object.entries(playersMap).map(([key, player]) => (
-              <li className={""} key={key}>
-                {player.user_id === userId ? (
-                  <div className={"flex flex-col items-center"}>
-                    <img
-                      className={"rounded-full w-14 h-14 border"}
-                      src={`/avatars/Cute-portraits_${player.avatar}.png`}
-                      alt={player.game_name}
-                    />
-                    <span>{player.game_name}</span>
-                  </div>
-                ) : (
-                  <div className={"flex flex-col items-center"}>
-                    <img
-                      className={"rounded-full w-14 h-14 border"}
-                      src={
-                        isRevealed
-                          ? `/avatars/Cute-portraits_${player.avatar}.png`
-                          : `/avatars/anons/anon${anonNumber}.png`
-                      }
-                    />
-
-                    {isRevealed ? player.game_name : "?"}
-                  </div>
-                )}
-              </li>
-            ))}
+            userId &&
+            PlayersRow({ playersMap, userId, isRevealed })}
         </ul>
       </motion.div>
     </div>

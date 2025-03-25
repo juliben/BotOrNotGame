@@ -10,15 +10,18 @@ import {
   getFirstMessageFromAi,
   processVotes,
   ping,
+  getLeaderId,
+  fetchPlayers,
 } from "../services/";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-import { User } from "../../types.ts";
+import { Message, User } from "../../types.ts";
 
 const Room = () => {
+  const [userId, setUserId] = useState(null);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,28 +37,51 @@ const Room = () => {
   const [sentFirstMessage, setSentFirstMessage] = useState(false);
 
   const votesTimerRef = useRef(null);
-  const namesWithIdsRef = useRef(null);
   const winnerRef = useRef(null);
   const votersRef = useRef([]);
 
-  // Array of names with corresponding userIds ({ game_name, user_id })
-  const [namesWithIds, setNamesWithIds] = useState([]);
-
-  const [shuffledNames, setShuffledNames] = useState([]);
+  // Important data coming from the Lobby
   const roomId = useParams().roomId;
-  const [userId, setUserId] = useState(null);
-
   const location = useLocation();
-  const { playersMap } = location.state as { playersMap: any };
-  const aiUserRef = useRef(null);
-  const leaderRef = useRef<string | null>(null);
+  const [playersMap, setPlayersMap] = useState(() => {
+    return (location.state as { playersMap: any })?.playersMap || {};
+  });
+  //
+
+  const aiUserRef = useRef<User | null>(null);
+  const leaderIdRef = useRef<string | null>(null);
+  const myUserRef = useRef<User | null>(null);
+
+  // For scrolling to bottom on new messages
+  const messagesEndRef = useRef(null);
+
+  // Re-fetch playersMap
+  // The playersMap getting pass through the route (for faster UX) doesn't include the numbers that were just assigned.
+  useEffect(() => {
+    if (!roomId) return;
+    fetchPlayers({ roomId }).then((players) => {
+      setPlayersMap(players);
+    });
+  }, []);
 
   // Get a delegated user to send requests
-  const getLeaderId = () => {
-    // Map to IDs and sort them lexicographically
-    const sortedIds = Object.keys(playersMap).sort();
-    leaderRef.current = sortedIds[0];
-  };
+  // I have to use this function elsewhere, that's why it's outside the useEffect
+
+  // Get a new? leader when playersMap changes (someone disconnects)
+  useEffect(() => {
+    if (!playersMap) return;
+    leaderIdRef.current = getLeaderId(playersMap);
+  }, [playersMap]);
+
+  // Get user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const userId = await getUserId();
+      myUserRef.current = playersMap[userId];
+      setUserId(userId);
+    };
+    getCurrentUser();
+  }, []);
 
   // Get the AI user ID and save a ref
   useEffect(() => {
@@ -108,7 +134,7 @@ const Room = () => {
       console.log("AI or roomId not found (sendMessagesToAi)");
       return;
     }
-    if (leaderRef.current !== userId) {
+    if (leaderIdRef.current !== userId) {
       return;
     }
 
@@ -130,6 +156,19 @@ const Room = () => {
 
   // First message from AI?
   useEffect(() => {
+    if (!roomId) {
+      return;
+    }
+    if (!myUserRef.current) {
+      console.log("My user not found");
+      return;
+    }
+
+    if (leaderIdRef.current !== userId) {
+      console.log(`I (${myUserRef.current.game_name}) am not the leader`);
+      console.log(`The leader is ${playersMap[leaderIdRef.current].game_name}`);
+      return;
+    }
     if (!aiUserRef.current) {
       console.log("AI user not found");
       return;
@@ -138,20 +177,14 @@ const Room = () => {
       console.log("Already sent first message");
       return;
     }
-    const leaderId = getLeaderId();
-    if (leaderId !== userId) {
-      return;
-    }
     if (!flipCoin()) {
       console.log("Skipping first message from AI");
       return;
     }
+
     getFirstMessageFromAi(roomId, aiUserRef.current);
     setSentFirstMessage(true);
-  }, [namesWithIds, roomId]);
-
-  // For scrolling to bottom on new messages
-  const messagesEndRef = useRef(null);
+  }, [roomId]);
 
   // Scroll to the bottom of the messages container
   useEffect(() => {
@@ -198,11 +231,6 @@ const Room = () => {
     }, 1000);
   };
 
-  // Get user ID
-  useEffect(() => {
-    getUserId().then((id) => setUserId(id));
-  }, []);
-
   // Vote channel subscription
   useEffect(() => {
     console.log("Subscribing to vote channel for roomId:", roomId);
@@ -245,14 +273,14 @@ const Room = () => {
             const updatedVotes = [...prevVotes, vote];
             if (updatedVotes.length >= 3) {
               clearInterval(votesTimerRef.current);
-              const winner = processVotes(
-                updatedVotes,
-                namesWithIdsRef.current,
-                roomId
-              );
-              winnerRef.current = winner;
-              setWinner(winner);
-              setWinnerScreenVisible(true);
+              // const winner = processVotes(
+              //   updatedVotes,
+              //   namesWithIdsRef.current,
+              //   roomId
+              // );
+              // winnerRef.current = winner;
+              // setWinner(winner);
+              // setWinnerScreenVisible(true);
             }
             return updatedVotes;
           });
@@ -285,14 +313,14 @@ const Room = () => {
             return;
           }
 
-          const newMessage = {
-            sender: payload.new.sender_id,
-            sender_name: payload.new.game_name,
-            message: payload.new.content,
+          const newMessage: Partial<Message> = {
+            sender_id: payload.new.sender_id,
+            game_name: payload.new.game_name,
+            content: payload.new.content,
             is_vote: payload.new.is_vote,
+            is_from_ai: payload.new.is_from_ai,
             is_from_server: payload.new.is_from_server,
             avatar: payload.new.avatar,
-            is_ai: payload.new.is_ai,
           };
           console.log("Received payload message: " + newMessage.message);
           setMessages((messages) => [...messages, newMessage]);
@@ -311,19 +339,15 @@ const Room = () => {
     if (input === "") return;
     if (!userId) return;
 
-    const myUser = namesWithIds.find((name) => name.user_id === userId);
-    if (!myUser) return;
-
-    const myAvatar = myUser.avatar;
-    const myName = myUser.game_name;
+    const myUser = playersMap[userId];
 
     try {
       const { error } = await supabase.from("messages").insert({
         sender_id: userId,
         room_id: roomId,
         content: input,
-        game_name: myName,
-        avatar: myAvatar,
+        game_name: myUser.game_name,
+        avatar: myUser.avatar,
       });
       if (error) {
         console.log("Error sending message to Supabase:", error);
@@ -352,26 +376,17 @@ const Room = () => {
   };
 
   const sendMyVoteAsMessage = async (voted) => {
-    const myName = namesWithIds.find(
-      (name) => name.user_id === userId
-    )?.game_name;
-    if (!myName) return;
+    if (!userId) return;
 
-    const hisName = namesWithIds.find(
-      (name) => name.user_id === voted
-    )?.game_name;
-    if (!hisName) return;
-
-    const myAvatar = namesWithIds.find(
-      (name) => name.user_id === userId
-    )?.avatar;
+    const myUser = playersMap[userId];
+    const votedUser = playersMap[voted];
 
     try {
       const { error } = await supabase.from("messages").insert({
         sender_id: userId,
-        content: `${myName} voted for ${hisName}`,
+        content: `${myUser.game_name} voted for ${votedUser.game_name}`,
         room_id: roomId,
-        avatar: myAvatar,
+        avatar: myUser.avatar,
         is_vote: true,
       });
       if (error) {
@@ -384,19 +399,16 @@ const Room = () => {
 
   const startVotingTimer = () => {
     votesTimerRef.current = setTimeout(() => {
+      if (!aiUserRef.current) {
+        return;
+      }
       console.log("Voting time ended (timeout reached).");
-      const winner = processVotes(votes, namesWithIds);
-      setWinner(winner);
-
-      // Add the AI's vote to the messages array (not in Supabase)
-      const aiName = namesWithIds.find(
-        (name) => name.user_id === AI_USER_ID
-      )?.game_name;
-      if (!aiName) return;
+      // const winner = processVotes(votes, namesWithIds);
+      // setWinner(winner);
 
       const newAiMessage = {
-        sender_id: AI_USER_ID,
-        content: `${aiName} voted for ${winner.game_name}`,
+        sender_id: aiUserRef.current.user_id,
+        content: `${aiUserRef.current.game_name} voted for ${winner.game_name}`,
         room_id: roomId,
         is_vote: true,
       };
@@ -425,8 +437,6 @@ const Room = () => {
     4: "bg-[#660066] text-white", // Dark purple for player 4
   };
 
-  const myAvatar = namesWithIds.find((name) => name.user_id === userId)?.avatar;
-
   return (
     <div className={`flex flex-col p-4 min-h-dvh max-h-dvh bg-[#353b85] `}>
       {winner && <p>Winner: {winner.game_name}</p>}
@@ -445,15 +455,14 @@ const Room = () => {
       >
         {playersMap[userId] && (
           <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
-            {shuffledNames.map((player, index) => (
+            {Object.values(playersMap).map((player, index) => (
               <span
                 key={player.user_id}
-                className={`${
-                  playerNameStyles[player.number]
-                } px-1 font-medium `}
+                className="
+                px-1 font-medium text-[var(--player-{player.number}-name)]"
               >
                 {player.game_name}
-                {index < shuffledNames.length - 1 ? ", " : ""}
+                {index < Object.keys(playersMap).length - 1 ? ", " : ""}
               </span>
             ))}{" "}
             have joined the room.
@@ -536,7 +545,7 @@ const Room = () => {
               )}
               {isLastMessage && msg.sender === userId && (
                 <img
-                  src={`/avatars/Cute-portraits_${myAvatar}.png`}
+                  src={`/avatars/Cute-portraits_${myUser}.png`}
                   className="rounded-full w-7 h-7 mr-2 mb-0.5"
                 />
               )}

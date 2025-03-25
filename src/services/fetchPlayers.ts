@@ -1,17 +1,30 @@
+import supabase from "../api/supabase";
+import { User } from "../../types";
 
+type Props = {
+  roomId: string;
+};
 
-export const fetchPlayers = async () => {
-  const { data: players, count: readyCount } = await fetchReadyPlayers(roomId);
+export const fetchPlayers = async ({ roomId }: Props) => {
+  const { data, error } = await supabase
+    .from("players")
+    .select("user_id, game_name, avatar, is_ai, number")
+    .eq("room_id", roomId)
+    .eq("is_online", true);
 
-  if (players && readyCount) {
-    const playersMap = players.reduce((acc, player) => {
-      acc[player.user_id] = {
-        game_name: player.game_name,
-        avatar: player.avatar,
-        user_id: player.user_id,
-      };
-      return acc;
-    }, {});
-    return { playersMap, readyCount };
+  if (error) {
+    console.log("Error fetching players:", error);
   }
+
+  if (!data) {
+    return;
+  }
+
+  const players = data.reduce((acc: Record<string, Partial<User>>, player) => {
+    acc[player.user_id] = player;
+    return acc;
+  }, {});
+
+  // Returning playersMap object
+  return players;
 };

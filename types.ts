@@ -2,7 +2,8 @@ export type User = {
   user_id: string;
   room_id: number;
   game_name: string;
-  avatar: number;
+  avatar: string;
+  number: number;
   is_ai: boolean;
   is_ready: boolean;
   is_online: boolean;
@@ -15,7 +16,8 @@ export type Message = {
   content: string;
   room_id: number;
   game_name: string;
-  avatar: number;
-  is_from_server: boolean;
+  avatar: string;
+  is_from_ai: boolean;
   is_vote: boolean;
+  is_from_server: boolean;
 };

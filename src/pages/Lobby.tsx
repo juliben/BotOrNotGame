@@ -8,14 +8,15 @@ import { fetchReadyPlayers } from "@/services/fetchReadyPlayers";
 import omit from "lodash/omit";
 import isEqual from "lodash/isEqual";
 import { assignNumbersToPlayers } from "@/services/assignNumbersToPlayers";
+import { fetchPlayers } from "@/services";
 
 const TestScreen = ({}) => {
   const navigate = useNavigate();
   const userId = useParams().userId;
-  const [roomId, setRoomId] = useState(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
   const [readyCount, setReadyCount] = useState(3);
   const [roomFull, setRoomFull] = useState(false);
-  const [playersMap, setPlayersMap] = useState([{}]);
+  const [playersMap, setPlayersMap] = useState({});
   const [isRevealed, setIsRevealed] = useState(false);
 
   // To reveal the player's avatars when starting the game
@@ -64,29 +65,29 @@ const TestScreen = ({}) => {
     initalRoomQuery();
   }, []);
 
+  // Fetch ready players
   useEffect(() => {
-    fetchPlayers();
-  }, [roomId]);
-
-  // This updates the playersMap and the ready count state
-  const fetchPlayers = async () => {
-    fetchReadyPlayers(roomId).then(({ data, count }) => {
+    if (!roomId) {
+      return;
+    }
+    fetchReadyPlayers(roomId).then((count) => {
       if (count) {
         setReadyCount(count);
       }
-
-      if (!data) {
-        return;
-      }
-
-      const players = data.reduce((acc, player) => {
-        acc[player.user_id] = player;
-        return acc;
-      }, {});
-
-      setPlayersMap(players);
     });
-  };
+  }, [roomId]);
+
+  // Fetch players map
+  useEffect(() => {
+    if (!roomId) {
+      return;
+    }
+    fetchPlayers({ roomId }).then((playersMap) => {
+      if (playersMap) {
+        setPlayersMap(playersMap);
+      }
+    });
+  }, [roomId]);
 
   // Subscribe to channel (ready players)
   useEffect(() => {
@@ -116,7 +117,11 @@ const TestScreen = ({}) => {
             }
           }
           // There's been a legit change -> Refetch
-          fetchPlayers();
+          fetchPlayers({ roomId }).then((playersMap) => {
+            if (playersMap) {
+              setPlayersMap(playersMap);
+            }
+          });
         }
       )
 
@@ -154,6 +159,9 @@ const TestScreen = ({}) => {
       }, 1500);
     }
   }, [readyCount]);
+
+  // Random numbers for anon avatar
+  const anonNumber = Math.floor(Math.random() * 9) + 1;
 
   return (
     <div className="flex flex-col flex-1 p-4 px-6 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center">
@@ -207,12 +215,11 @@ const TestScreen = ({}) => {
                       src={
                         isRevealed
                           ? `/avatars/Cute-portraits_${player.avatar}.png`
-                          : `/avatars/Cute-portraits_00.png`
+                          : `/avatars/anons/anon${anonNumber}.png`
                       }
                     />
-                    <span className={isRevealed ? "" : "text-[var(--border)]"}>
-                      {isRevealed ? player.game_name : "?"}
-                    </span>
+
+                    {isRevealed ? player.game_name : "?"}
                   </div>
                 )}
               </li>

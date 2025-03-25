@@ -10,7 +10,7 @@ import Room from "./pages/Room";
 import LanguageProvider from "./context/LanguageContext";
 import ChooseName from "./pages/ChooseName";
 import { AnimatePresence } from "motion/react";
-import TestScreen from "./pages/test";
+import TestScreen from "./pages/Lobby";
 
 const AnimatedRoutes = () => {
   const location = useLocation();

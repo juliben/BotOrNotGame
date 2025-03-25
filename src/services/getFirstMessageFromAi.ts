@@ -3,7 +3,7 @@ import axios from "axios";
 import { flipCoin } from "./flipCoin";
 import { User } from "../../types.ts";
 
-export const getFirstMessageFromAi = async (aiUser: User, roomId: string) => {
+export const getFirstMessageFromAi = async (roomId: string, aiUser: User) => {
   try {
     console.log("Getting first message from AI");
     const response = await axios.get(
@@ -55,6 +55,7 @@ export const getFirstMessageFromAi = async (aiUser: User, roomId: string) => {
         game_name: aiUser.game_name,
         avatar: aiUser.avatar,
         content: sentence,
+        is_from_ai: true,
       });
       if (error) {
         console.log("Error sending sentence to Supabase:", error);

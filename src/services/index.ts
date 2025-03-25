@@ -1,7 +1,6 @@
 export * from "./addAiToRoom";
 export * from "./assignNumbersToPlayers";
 export * from "./createAiPlayer";
-export * from "./fetchParticipantNames";
 export * from "./fetchPlayers";
 export * from "./fetchReadyPlayers";
 export * from "./finalVoteCount";
@@ -14,3 +13,4 @@ export * from "./processVotes";
 export * from "./queryRooms";
 export * from "./sendMessagesToAi";
 export * from "./startPinging";
+export * from "./getLeaderId";

@@ -1,15 +1,11 @@
 import supabase from "@/api/supabase";
 
 // Fetch the current count of ready players in the room
-export const fetchReadyPlayers = async (roomId) => {
-  if (roomId === null) {
-    console.log("Room ID not available yet.");
-    return;
-  }
-  const { data, count, error } = await supabase
+export const fetchReadyPlayers = async (roomId: string) => {
+  const { count, error } = await supabase
     .from("players")
     .select("*", { count: "exact" })
-    .eq("room_id", roomId)
+    .eq("room_id", Number(roomId))
     .eq("is_online", true)
     .eq("is_ready", true);
 
@@ -17,5 +13,5 @@ export const fetchReadyPlayers = async (roomId) => {
     console.log("Error fetching ready players:", error);
   }
 
-  return { data, count };
+  return count;
 };

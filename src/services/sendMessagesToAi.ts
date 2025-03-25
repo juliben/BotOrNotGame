@@ -58,11 +58,12 @@ export const sendMessagesToAi = async (
 
       // Now insert the sentence.
       const { error } = await supabase.from("messages").insert({
+        room_id: roomId,
         sender_id: aiUser.user_id,
         content: sentence,
         game_name: aiUser.game_name,
-        room_id: roomId,
         avatar: aiUser.avatar,
+        is_from_ai: true,
       });
       if (error) {
         console.log("Error sending sentence to Supabase:", error);

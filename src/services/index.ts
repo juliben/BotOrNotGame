@@ -2,7 +2,6 @@ export * from "./addAiToRoom";
 export * from "./assignNumbersToPlayers";
 export * from "./createAiPlayer";
 export * from "./fetchPlayers";
-export * from "./fetchReadyPlayers";
 export * from "./finalVoteCount";
 export * from "./flipCoin";
 export * from "./getFirstMessageFromAi";

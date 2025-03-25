@@ -1,5 +1,10 @@
-export const getLeaderId = (playersMap) => {
+import { User } from "types";
+
+export const getLeaderId = (playersMap: Record<string, Partial<User>>) => {
   // Map to IDs and sort them lexicographically
-  const sortedIds = Object.keys(playersMap).sort();
-  return sortedIds[0];
+  const leaderId = Object.entries(playersMap)
+    .filter(([, player]) => !player.is_ai)
+    .map(([key]) => key)
+    .sort()[0];
+  return leaderId;
 };

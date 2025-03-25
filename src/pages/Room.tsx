@@ -1,3 +1,4 @@
+import { ReturnButton } from "./../components/ui/ReturnButton";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import supabase from "../api/supabase";
@@ -19,16 +20,17 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 import { Message, User } from "../../types.ts";
+import PlayerNames from "@/components/PlayerNames.tsx";
+import { Messages } from "@/components/Messages.tsx";
 
 const Room = () => {
-  const [userId, setUserId] = useState(null);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(10000);
   const [isVoting, setIsVoting] = useState(false);
   const [votingCountdown, setVotingCountdown] = useState(10000);
-  const [winner, setWinner] = useState(null);
+  const [winner, setWinner] = useState<User | null>(null);
   const [votes, setVotes] = useState([]);
   const [winnerScreenVisible, setWinnerScreenVisible] = useState(false);
   const [animationStep2, setAnimationStep2] = useState(false);
@@ -37,35 +39,45 @@ const Room = () => {
   const [sentFirstMessage, setSentFirstMessage] = useState(false);
 
   const votesTimerRef = useRef(null);
-  const winnerRef = useRef(null);
+  // const winnerRef = useRef(null);
   const votersRef = useRef([]);
 
   // Important data coming from the Lobby
   const roomId = useParams().roomId;
   const location = useLocation();
-  const [playersMap, setPlayersMap] = useState(() => {
-    return (location.state as { playersMap: any })?.playersMap || {};
+  const [playersMap, setPlayersMap] = useState<Record<string, Partial<User>>>(
+    () => {
+      return (location.state as { playersMap: any })?.playersMap || {};
+    }
+  );
+  const [userId, setUserId] = useState<string | null>(() => {
+    return (location.state as { userId: any })?.userId || null;
   });
   //
 
   const aiUserRef = useRef<User | null>(null);
   const leaderIdRef = useRef<string | null>(null);
-  const myUserRef = useRef<User | null>(null);
 
   // For scrolling to bottom on new messages
   const messagesEndRef = useRef(null);
 
-  // Re-fetch playersMap
-  // The playersMap getting pass through the route (for faster UX) doesn't include the numbers that were just assigned.
-  useEffect(() => {
-    if (!roomId) return;
-    fetchPlayers({ roomId }).then((players) => {
-      setPlayersMap(players);
-    });
-  }, []);
-
   // Get a delegated user to send requests
   // I have to use this function elsewhere, that's why it's outside the useEffect
+
+  // Initial refetch just in case
+  useEffect(() => {
+    if (!userId) {
+      getUserId().then((userId) => {
+        if (!userId) return;
+        setUserId(userId);
+      });
+    }
+    if (!roomId) return;
+    fetchPlayers({ roomId }).then((playersMap) => {
+      if (!playersMap) return;
+      setPlayersMap(playersMap);
+    });
+  }, []);
 
   // Get a new? leader when playersMap changes (someone disconnects)
   useEffect(() => {
@@ -77,7 +89,6 @@ const Room = () => {
   useEffect(() => {
     const getCurrentUser = async () => {
       const userId = await getUserId();
-      myUserRef.current = playersMap[userId];
       setUserId(userId);
     };
     getCurrentUser();
@@ -102,14 +113,9 @@ const Room = () => {
     let pingInterval;
 
     if (!userId) {
-      getUserId().then((id) => {
-        setUserId(id);
-      });
-    }
-    if (userId === null) {
-      console.log("Ping: User ID not found");
       return;
     }
+
     console.log("Attempting to start pinging, userId:", userId);
 
     const startPinging = async () => {
@@ -159,13 +165,13 @@ const Room = () => {
     if (!roomId) {
       return;
     }
-    if (!myUserRef.current) {
-      console.log("My user not found");
+    if (!userId) {
+      console.log("User Id found");
       return;
     }
 
     if (leaderIdRef.current !== userId) {
-      console.log(`I (${myUserRef.current.game_name}) am not the leader`);
+      console.log(`I (${playersMap[userId].game_name}) am not the leader`);
       console.log(`The leader is ${playersMap[leaderIdRef.current].game_name}`);
       return;
     }
@@ -416,27 +422,6 @@ const Room = () => {
     }, 12000);
   };
 
-  const playerNameStyles = {
-    1: "text-[#E0D9F7] ", // Light blue for player 1
-    2: "text-[#D0E8F8] ", // Light green for player 2
-    3: "text-[#A0F1F5] ", // Light red for player 3
-    4: "text-[#E6B3E6] ", // Light purple for player 4
-  };
-
-  const playerVoteStyles = {
-    1: "text-[#E0D9F7] font-medium", // Light blue for player 1
-    2: "text-[#D0E8F8] font-medium", // Light green for player 2
-    3: "text-[#A0F1F5] font-medium", // Light red for player 3
-    4: "text-[#E6B3E6] font-medium", // Light purple for player 4
-  };
-
-  const messageBubbleStyles = {
-    1: "bg-[#6A5ACD] text-white", // Dark blue for player 1
-    2: "bg-[#5C8BC0] text-white", // Dark green for player 2
-    3: "bg-[#009BA0] text-white", // Dark red for player 3
-    4: "bg-[#660066] text-white", // Dark purple for player 4
-  };
-
   return (
     <div className={`flex flex-col p-4 min-h-dvh max-h-dvh bg-[#353b85] `}>
       {winner && <p>Winner: {winner.game_name}</p>}
@@ -453,108 +438,15 @@ const Room = () => {
           isVoting || winnerScreenVisible ? " blur-xs pointer-events-none" : ""
         } `}
       >
-        {playersMap[userId] && (
-          <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
-            {Object.values(playersMap).map((player, index) => (
-              <span
-                key={player.user_id}
-                className="
-                px-1 font-medium text-[var(--player-{player.number}-name)]"
-              >
-                {player.game_name}
-                {index < Object.keys(playersMap).length - 1 ? ", " : ""}
-              </span>
-            ))}{" "}
-            have joined the room.
-          </p>
+        {playersMap && <PlayerNames playersMap={playersMap} />}
+        {playersMap && userId && (
+          <Messages
+            messages={messages}
+            playersMap={playersMap}
+            userId={userId}
+            messagesEndRef={messagesEndRef}
+          />
         )}
-        {messages.map((msg, index) => {
-          const senderNumber = playersMap[msg.sender];
-          // This is to check whether to display avatar image in message bubble or not
-          const isLastMessage =
-            index === messages.length - 1 ||
-            messages[index + 1].sender !== msg.sender;
-
-          return (
-            <div
-              className={`${
-                msg.sender === userId ? "self-end" : "self-start"
-              } flex flex-row items-end relative`}
-            >
-              {isLastMessage &&
-                msg.sender !== userId &&
-                !msg.is_from_server &&
-                !msg.is_vote && (
-                  <img
-                    src={`/avatars/Cute-portraits_${msg.avatar}.png`}
-                    className="rounded-full w-7 h-7 ml-2 mb-0.5"
-                  />
-                )}
-              {!isLastMessage &&
-                msg.sender !== userId &&
-                !msg.is_from_server &&
-                !msg.is_vote && (
-                  <div className="rounded-full w-7 h-7 ml-2 mb-0.5 bg-transparent" />
-                )}
-              <div
-                key={index}
-                className={`${
-                  msg.sender === userId
-                    ? "self-end"
-                    : msg.is_from_server
-                    ? "self-center"
-                    : "self-start"
-                } ${
-                  msg.is_vote
-                    ? `${playerVoteStyles[senderNumber]}`
-                    : msg.is_from_server
-                    ? "bg-gray-200 text-gray-800"
-                    : `message-bubble ${messageBubbleStyles[senderNumber]}`
-                } max-w-xs p-2 rounded-lg mx-2 `}
-              >
-                <div>
-                  <div className={"flex flex-col "}>
-                    {!msg.is_vote && !msg.is_from_server && (
-                      <p className={`${playerNameStyles[senderNumber]}`}>
-                        ~{msg.sender_name}
-                      </p>
-                    )}
-                    <div className="flex flex-row items-center gap-2">
-                      <p>{msg.message}</p>
-                    </div>
-                  </div>
-
-                  <div ref={messagesEndRef} />
-                </div>
-              </div>
-
-              {/* Tail: only add if this is the last message and not a server message */}
-              {isLastMessage && !msg.is_from_server && (
-                <div
-                  className={`absolute -bottom-2 ${
-                    msg.sender === userId ? "right-4" : "left-4"
-                  }`}
-                >
-                  {/* The triangle is created using borders.
-                Adjust border colors to match your message bubble background */}
-                  {/* <div
-                    className={`w-0 h-0 border-10 border-transparent ${messageBubbleStyles[senderNumber]}
-                    }`}
-                  /> */}
-                </div>
-              )}
-              {isLastMessage && msg.sender === userId && (
-                <img
-                  src={`/avatars/Cute-portraits_${myUser}.png`}
-                  className="rounded-full w-7 h-7 mr-2 mb-0.5"
-                />
-              )}
-              {!isLastMessage && msg.sender === userId && (
-                <div className="rounded-full w-7 h-7 mr-2 mb-0.5 bg-transparent" />
-              )}
-            </div>
-          );
-        })}
       </Card>
 
       <div
@@ -585,7 +477,7 @@ const Room = () => {
             <p className="text-center text-red-400 mb-3">{votingCountdown}</p>
             <h1 className="text-center font-bold mb-5 ">Who's the bot?</h1>
             <div className="flex flex-row flex-wrap item-center justify-center gap-0">
-              {shuffledNames.map((player) =>
+              {Object.values(playersMap).map((player) =>
                 player.user_id === userId ? null : (
                   <motion.div
                     whileHover={{ scale: 1.1 }}
@@ -593,9 +485,7 @@ const Room = () => {
                   >
                     <Button
                       onClick={() => handleVote(player.user_id)}
-                      className={`flex items-center justify-center rounded-lg w-auto h-auto shadow-xl mx-2 mb-2  ${
-                        messageBubbleStyles[player.number]
-                      }`}
+                      className={`flex bg-[var(--player-${player.number}-bubble)] items-center justify-center rounded-lg w-auto h-auto shadow-xl mx-2 mb-2  `}
                     >
                       <div className="flex flex-col items-center justify-center gap-2">
                         <img
@@ -701,8 +591,8 @@ const Room = () => {
                 }}
                 className="text-red-400"
               >
-                {winner.user_id === AI_USER_ID && "AI DETECTED"}
-                {winner.user_id !== AI_USER_ID && "NOT AN AI"}
+                {winner.is_ai && "AI DETECTED"}
+                {!winner.is_ai && "NOT AN AI"}
               </motion.p>
             </motion.div>
             <motion.h1
@@ -712,35 +602,10 @@ const Room = () => {
               className="text-xl  text-center text-red-400"
             >
               {winner.user_id === userId && "YOU WIN!"}
-              {winner.user_id === AI_USER_ID && "HUMANS WIN!"}
-              {winner.user_id !== AI_USER_ID && "HUMANS LOSE!"}
+              {winner.is_ai && "HUMANS WIN!"}
+              {!winner.is_ai && "HUMANS LOSE!"}
             </motion.h1>
-            <motion.button
-              initial={{ opacity: 0, y: -110 }}
-              animate={{ opacity: 1, y: -110 }}
-              transition={{ delay: 4 }}
-              className="
-  relative
-  bg-[#F11493]         /* Vibrant cyberpunk pink background */
-  text-white
-  font-mono
-  border-4
-  border-[#FF40DA]      /* Neon purple-pink border */
-  px-5
-  py-2
-  uppercase
-  tracking-wider
-  rounded-none          /* No rounding for a pixelated feel */
-  hover:bg-[#FF40DA]    /* On hover, swap background to neon purple-pink */
-  active:bg-[#FF86D4]   /* On click/active, lighten it a bit */
-  focus:outline-none
-  transition-all
-  shadow-[0_0_8px_#FF40DA]  /* Subtle neon glow shadow */
-  hover:shadow-[0_0_12px_#FF40DA]
-"
-            >
-              Return
-            </motion.button>
+            <ReturnButton />
           </div>
         </button>
       )}

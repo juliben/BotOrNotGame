@@ -18,7 +18,6 @@ import { signInAnonymously } from "@/api/supabaseAuth";
 const ChooseName = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
 
   const [randomAvatarNumber, setRandomAvatarNumber] = useState<string | null>(
@@ -48,7 +47,6 @@ const ChooseName = () => {
       .from("players")
       .update([
         {
-          is_ready: true,
           game_name: name,
           avatar: randomAvatarNumber,
           is_online: true,

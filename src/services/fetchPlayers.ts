@@ -20,11 +20,14 @@ export const fetchPlayers = async ({ roomId }: Props) => {
     return;
   }
 
-  const players = data.reduce((acc: Record<string, Partial<User>>, player) => {
-    acc[player.user_id] = player;
-    return acc;
-  }, {});
+  const playersMap = data.reduce(
+    (acc: Record<string, Partial<User>>, player) => {
+      acc[player.user_id] = player;
+      return acc;
+    },
+    {}
+  );
 
   // Returning playersMap object
-  return players;
+  return playersMap;
 };

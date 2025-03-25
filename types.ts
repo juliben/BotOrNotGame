@@ -5,7 +5,6 @@ export type User = {
   avatar: string;
   number: number;
   is_ai: boolean;
-  is_ready: boolean;
   is_online: boolean;
   voted_for: string;
 };

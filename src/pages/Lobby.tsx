@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { ReadyCountDisplay } from "../components/ReadyCountDisplay";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ping } from "@/services/ping";
 import { queryRooms } from "@/services/queryRooms";
 import supabase from "@/api/supabase";
-import { fetchReadyPlayers } from "@/services/fetchReadyPlayers";
 import omit from "lodash/omit";
 import isEqual from "lodash/isEqual";
 import { assignNumbersToPlayers } from "@/services/assignNumbersToPlayers";
@@ -15,17 +15,12 @@ const TestScreen = ({}) => {
   const navigate = useNavigate();
   const userId = useParams().userId;
   const [roomId, setRoomId] = useState<string | null>(null);
-  const [readyCount, setReadyCount] = useState(3);
-  const [roomFull, setRoomFull] = useState(false);
+  const [readyToGo, setReadyToGo] = useState(false);
   const [playersMap, setPlayersMap] = useState({});
+  const [playerCount, setPlayerCount] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
 
-  // To reveal the player's avatars when starting the game
-  useEffect(() => {
-    if (roomFull) {
-      setIsRevealed(true);
-    }
-  }, [roomFull]);
+  const playersMapRef = useRef(playersMap);
 
   // Start pinging
   useEffect(() => {
@@ -66,18 +61,6 @@ const TestScreen = ({}) => {
     initalRoomQuery();
   }, []);
 
-  // Fetch ready players
-  useEffect(() => {
-    if (!roomId) {
-      return;
-    }
-    fetchReadyPlayers(roomId).then((count) => {
-      if (count) {
-        setReadyCount(count);
-      }
-    });
-  }, [roomId]);
-
   // Fetch players map
   useEffect(() => {
     if (!roomId) {
@@ -86,6 +69,7 @@ const TestScreen = ({}) => {
     fetchPlayers({ roomId }).then((playersMap) => {
       if (playersMap) {
         setPlayersMap(playersMap);
+        setPlayerCount(Object.keys(playersMap).length);
       }
     });
   }, [roomId]);
@@ -120,7 +104,10 @@ const TestScreen = ({}) => {
           // There's been a legit change -> Refetch
           fetchPlayers({ roomId }).then((playersMap) => {
             if (playersMap) {
+              console.log("Players map updated:", playersMap);
               setPlayersMap(playersMap);
+              playersMapRef.current = playersMap;
+              setPlayerCount(Object.keys(playersMap).length);
             }
           });
         }
@@ -140,31 +127,48 @@ const TestScreen = ({}) => {
   }, [roomId]);
 
   useEffect(() => {
-    if (readyCount < 4) {
+    if (!playersMap || !roomId || playerCount < 4) {
       return;
     }
     // Check if the room is full
-    if (readyCount === 4) {
-      setRoomFull(true);
-
-      // Assign color numbers to players
+    if (playerCount === 4) {
       console.log("Running assingNumbersToPlayers");
       try {
         assignNumbersToPlayers(roomId);
       } catch (error) {
         console.error("Error assigning numbers to players:", error);
       }
-
-      setTimeout(() => {
-        navigate(`/room/${roomId}`, { state: { playersMap } });
-      }, 1500);
+      setReadyToGo(true);
+      // Assign color numbers to players
     }
-  }, [readyCount]);
+  }, [playerCount]);
+
+  useEffect(() => {
+    if (readyToGo && roomId) {
+      // Refetch players map
+      fetchPlayers({ roomId }).then((playersMap) => {
+        if (playersMap) {
+          setPlayersMap(playersMap);
+          playersMapRef.current = playersMap;
+        }
+      });
+      setIsRevealed(true);
+
+      const timeout = setTimeout(() => {
+        console.log("Navigating, with playersMapRef:", playersMapRef.current);
+        navigate(`/room/${roomId}`, {
+          state: { playersMap: playersMapRef.current, userId: userId },
+        });
+      }, 10000);
+      return () => clearTimeout(timeout);
+    }
+  }, [readyToGo]);
 
   return (
     <div className="flex flex-col flex-1 p-4 px-6 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center">
       <div className="bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-50 top-0 left-0" />
 
+      <button onClick={() => console.log(playersMap)}>Debug</button>
       <motion.div
         initial={{ translateX: 400, rotate: 10, opacity: 0.5 }}
         animate={{ translateX: 0, rotate: 0, opacity: 1 }}
@@ -174,23 +178,10 @@ const TestScreen = ({}) => {
       >
         <p>Joined room: {roomId}</p>
         <div className={"flex flex-row"}>
-          {!roomFull ? (
-            <div>
-              Waiting for players to join...{" "}
-              <motion.div
-                className={"inline text-[var(--text-accent)] text-3xl"}
-                animate={{
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 1, -1, 0],
-                }}
-                transition={{ duration: 5, repeat: Infinity }}
-              >
-                {readyCount}
-              </motion.div>
-              /4
-            </div>
+          {!readyToGo && playersMap ? (
+            <ReadyCountDisplay readyCount={Object.keys(playersMap).length} />
           ) : (
-            <p>Ready to start...</p>
+            playersMap && <p>Ready to start...</p>
           )}
         </div>
         <ul className={"flex flex-row gap-5 "}>

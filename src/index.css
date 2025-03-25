@@ -54,6 +54,10 @@
   --player-2-bubble: #5c8bc0;
   --player-3-bubble: #009ba0;
   --player-4-bubble: #660066;
+  --player-1-row: #9082e9;
+  --player-2-row: #9bbce1;
+  --player-3-row: #25ced4;
+  --player-4-row: #c673c6;
 }
 
 .dark {
@@ -102,6 +106,10 @@
   --player-2-bubble: #5c8bc0;
   --player-3-bubble: #009ba0;
   --player-4-bubble: #660066;
+  --player-1-row: #8f80ef;
+  --player-2-row: #83b3ea;
+  --player-3-row: #1dbdc2;
+  --player-4-row: #be63be;
 }
 
 @theme inline {

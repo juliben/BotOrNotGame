@@ -1,7 +1,7 @@
 import { User } from "../../types.ts";
 
 type Props = {
-  playersMap: Record<string, User>;
+  playersMap: Record<string, Partial<User>>;
 };
 
 const PlayerNames = ({ playersMap }: Props) => {
@@ -10,10 +10,16 @@ const PlayerNames = ({ playersMap }: Props) => {
       {Object.values(playersMap).map((player, index) => (
         <span
           key={player.user_id}
-          className={`${playerNameStyles[player.number]} px-1 font-medium `}
+          className={`text-[var(--player-${player.number}-row)] px-1 font-medium`}
         >
           {player.game_name}
-          {index < Object.keys(playersMap).length - 1 ? ", " : ""}
+
+          {index === Object.keys(playersMap).length - 2 ? (
+            <span className="text-foreground"> and</span>
+          ) : (
+            ""
+          )}
+          {index < Object.keys(playersMap).length - 2 ? "," : ""}
         </span>
       ))}{" "}
       have joined the room.

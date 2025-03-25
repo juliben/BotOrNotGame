@@ -1,4 +1,3 @@
-import { AI_USER_ID } from "../../constants";
 import axios from "axios";
 import supabase from "../api/supabase";
 import { getFirstName } from "./getFirstName";
@@ -15,22 +14,26 @@ export const createAiPlayer = async (roomId) => {
     const randomNumber = Math.floor(Math.random() * 76) + 1;
     const number = String(randomNumber).padStart(2, "0");
 
-    const { data, error } = await supabase.from("players").insert([
-      {
-        game_name: firstName,
-        avatar: number,
-        is_ai: true,
-        room_id: roomId,
-        is_ready: true,
-      },
-    ]);
-
+    const { data, error } = await supabase
+      .from("players")
+      .insert([
+        {
+          game_name: firstName,
+          avatar: number,
+          is_ai: true,
+          room_id: roomId,
+        },
+      ])
+      .select("user_id")
+      .single();
     if (error) {
       console.log("Error updating AI's name in Supabase:", error);
+      return null;
     }
 
     return data;
   } catch {
     console.log("Error generating name");
+    return null;
   }
 };

@@ -39,7 +39,7 @@ const Room = () => {
   const [sentFirstMessage, setSentFirstMessage] = useState(false);
 
   const votesTimerRef = useRef(null);
-  // const winnerRef = useRef(null);
+  const winnerRef = useRef(null);
   const votersRef = useRef([]);
 
   // Important data coming from the Lobby
@@ -146,12 +146,15 @@ const Room = () => {
 
     if (
       messages.length === 0 ||
-      (messages.length === 1 && messages[0].is_ai === true)
+      (messages.length === 1 && messages[0].is_from_ai === true)
     ) {
       return;
     }
 
-    if (messages.length > 1 && messages[messages.length - 1].is_ai === true) {
+    if (
+      messages.length > 1 &&
+      messages[messages.length - 1].is_from_ai === true
+    ) {
       console.log("Last message was from AI");
       return;
     }
@@ -162,11 +165,7 @@ const Room = () => {
 
   // First message from AI?
   useEffect(() => {
-    if (!roomId) {
-      return;
-    }
-    if (!userId) {
-      console.log("User Id found");
+    if (!roomId || !userId || leaderIdRef) {
       return;
     }
 
@@ -200,26 +199,26 @@ const Room = () => {
   }, [messages]);
 
   // Counter to trigger voting
-  useEffect(() => {
-    const counter = setInterval(() => {
-      if (countdown > 0) {
-        setCountdown((prev) => {
-          if (prev <= 0) {
-            clearInterval(counter);
-            setIsVoting(true);
-            startVotingCountdown();
+  // useEffect(() => {
+  //   const counter = setInterval(() => {
+  //     if (countdown > 0) {
+  //       setCountdown((prev) => {
+  //         if (prev <= 0) {
+  //           clearInterval(counter);
+  //           setIsVoting(true);
+  //           startVotingCountdown();
 
-            // // This is the timer to count the votes after 12 seconds. It should be cleared in the votes channel subscription if enough votes are counted before the timeout
-            // startVotingTimer();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }
-    }, 1000);
+  //           // // This is the timer to count the votes after 12 seconds. It should be cleared in the votes channel subscription if enough votes are counted before the timeout
+  //           // startVotingTimer();
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }
+  //   }, 1000);
 
-    return () => clearInterval(counter);
-  }, []);
+  //   return () => clearInterval(counter);
+  // }, []);
 
   // Callback function for voting countdown
   const startVotingCountdown = () => {
@@ -328,7 +327,7 @@ const Room = () => {
             is_from_server: payload.new.is_from_server,
             avatar: payload.new.avatar,
           };
-          console.log("Received payload message: " + newMessage.message);
+          console.log("Received payload message: " + newMessage.content);
           setMessages((messages) => [...messages, newMessage]);
         }
       )

@@ -101,6 +101,8 @@ const TestScreen = ({}) => {
               return;
             }
           }
+
+          console.log("Running this from the payload");
           // There's been a legit change -> Refetch
           fetchPlayers({ roomId }).then((playersMap) => {
             if (playersMap) {

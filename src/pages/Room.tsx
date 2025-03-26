@@ -433,18 +433,20 @@ const Room = () => {
       </p>
       <button onClick={() => setIsVoting(true)}>Debug</button>
       <Card
-        className={`flex-1 overflow-y-scroll  mb-3 py-3 gap-3 bg-background ${
+        className={`flex-1 overflow-y-scroll  mb-3 pt-3 pb-0 gap-3 bg-background ${
           isVoting || winnerScreenVisible ? " blur-xs pointer-events-none" : ""
         } `}
       >
         {playersMap && <PlayerNames playersMap={playersMap} />}
         {playersMap && userId && (
-          <Messages
-            messages={messages}
-            playersMap={playersMap}
-            userId={userId}
-            messagesEndRef={messagesEndRef}
-          />
+          <>
+            <Messages
+              messages={messages}
+              playersMap={playersMap}
+              userId={userId}
+            />
+            <div ref={messagesEndRef} />
+          </>
         )}
       </Card>
 

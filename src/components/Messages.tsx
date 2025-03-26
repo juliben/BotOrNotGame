@@ -4,14 +4,13 @@ interface Props {
   messages: Message[];
   playersMap: Record<string, Partial<User>>;
   userId: string;
-  messagesEndRef: any;
 }
 
 const bubbleStyles = {
-  1: "bg-[#6a5acd] rounded-lg w-fit h-fit px-3 py-1",
-  2: "bg-[#5c8bc0] rounded-lg w-fit h-fit px-3 py-1",
-  3: "bg-[#009ba0] rounded-lg w-fit h-fit px-3 py-1",
-  4: "bg-[#660066] rounded-lg w-fit h-fit px-3 py-1",
+  1: "bg-[#6a5acd] rounded-lg w-fit h-fit px-3 py-1 break-words max-w-sm",
+  2: "bg-[#5c8bc0] rounded-lg w-fit h-fit px-3 py-1 break-words max-w-sm",
+  3: "bg-[#009ba0] rounded-lg w-fit h-fit px-3 py-1 break-words max-w-sm",
+  4: "bg-[#660066] rounded-lg w-fit h-fit px-3 py-1 break-words max-w-sm",
 };
 
 const voteStyle = {
@@ -26,10 +25,6 @@ const nameStyles = {
   2: "text-[#d0e8f8] font medium",
   3: "text-[#a0f1f5] font-medium",
   4: "text-[#e6b3e6] font-medium",
-};
-
-const commonStyle = {
-  1: "min-w-full ",
 };
 
 export const Messages = ({
@@ -52,7 +47,7 @@ export const Messages = ({
             <div
               key={index}
               className={`flex place-items-end grid-cols-2 ${
-                isMine && "flex-row-reverse"
+                isMine && "flex-row-reverse ml-3 "
               }`}
             >
               {isLastMessage ? (

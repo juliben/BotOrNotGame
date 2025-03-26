@@ -1,8 +1,13 @@
 import { motion } from "motion/react";
 
-export function ReturnButton({}) {
+interface Props {
+  onClick: () => void;
+}
+
+export const ReturnButton = ({ onClick }: Props) => {
   return (
     <motion.button
+      onClick={onClick}
       initial={{
         opacity: 0,
         y: -110,
@@ -21,4 +26,4 @@ export function ReturnButton({}) {
       Return
     </motion.button>
   );
-}
+};

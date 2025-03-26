@@ -13,3 +13,4 @@ export * from "./queryRooms";
 export * from "./sendMessagesToAi";
 export * from "./startPinging";
 export * from "./getLeaderId";
+export * from "./sendMyVoteAsMessage";

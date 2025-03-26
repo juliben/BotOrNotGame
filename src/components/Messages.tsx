@@ -71,6 +71,7 @@ export const Messages = ({
         if (msg.is_vote) {
           return (
             <div
+              key={index}
               className={`${voteStyle[sender.number]} ${
                 isMine ? "self-end mr-4" : "self-start ml-4"
               }`}
@@ -82,7 +83,10 @@ export const Messages = ({
 
         if (msg.is_from_server) {
           return (
-            <div className="bg-gray-500 rounded-lg w-fit h-fit px-3 py-1 self-center mb-0.5">
+            <div
+              key={index}
+              className="bg-gray-500 rounded-lg w-fit h-fit px-3 py-1 self-center my-0.5"
+            >
               {msg.content}
             </div>
           );

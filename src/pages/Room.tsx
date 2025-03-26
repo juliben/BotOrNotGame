@@ -1,3 +1,6 @@
+import { AnimationStep1 } from "./../components/AnimationStep1";
+import { AnimationStep2 } from "./../components/AnimationStep2";
+import { VotingModal } from "./../components/VotingModal";
 import { ReturnButton } from "./../components/ui/ReturnButton";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
@@ -13,6 +16,7 @@ import {
   ping,
   getLeaderId,
   fetchPlayers,
+  sendMyVoteAsMessage,
 } from "../services/";
 
 import { Button } from "@/components/ui/button";
@@ -363,42 +367,28 @@ const Room = () => {
     }
   };
 
-  const handleVote = async (voted) => {
+  const handleVote = async (votedId: string) => {
+    if (!roomId || !userId) return;
+
     try {
       const { error } = await supabase
         .from("players")
-        .update({ voted_for: voted })
+        .update({ voted_for: votedId })
         .eq("user_id", userId);
       if (error) {
         console.log("Error sending vote to Supabase:", error);
         setIsVoting(false);
       }
       setIsVoting(false);
-      await sendMyVoteAsMessage(voted);
+
+      await sendMyVoteAsMessage({
+        roomId,
+        userId,
+        playersMap,
+        votedId,
+      });
     } catch (error) {
       console.log("Error sending vote:", error);
-    }
-  };
-
-  const sendMyVoteAsMessage = async (voted) => {
-    if (!userId) return;
-
-    const myUser = playersMap[userId];
-    const votedUser = playersMap[voted];
-
-    try {
-      const { error } = await supabase.from("messages").insert({
-        sender_id: userId,
-        content: `${myUser.game_name} voted for ${votedUser.game_name}`,
-        room_id: roomId,
-        avatar: myUser.avatar,
-        is_vote: true,
-      });
-      if (error) {
-        console.log("Error sending vote message to Supabase:", error);
-      }
-    } catch (error) {
-      console.log("Error sending vote message:", error);
     }
   };
 
@@ -467,148 +457,25 @@ const Room = () => {
         </form>
       </div>
 
-      {isVoting && (
-        <div className="fixed inset-0 flex items-center justify-center font-press-start text-x ">
-          <motion.div
-            initial={{ scale: 0.5 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="p-4 m-4 w-full mb-20"
-          >
-            <p className="text-center text-red-400 mb-3">{votingCountdown}</p>
-            <h1 className="text-center font-bold mb-5 ">Who's the bot?</h1>
-            <div className="flex flex-row flex-wrap item-center justify-center gap-0">
-              {Object.values(playersMap).map((player) =>
-                player.user_id === userId ? null : (
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Button
-                      onClick={() => handleVote(player.user_id)}
-                      className={`flex bg-[var(--player-${player.number}-bubble)] items-center justify-center rounded-lg w-auto h-auto shadow-xl mx-2 mb-2  `}
-                    >
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <img
-                          src={`/avatars/Cute-portraits_${player.avatar}.png`}
-                          className="rounded-full h-14 w-14 ring shadow-xs"
-                        />
-                        <p className={`text-foreground`}>{player.game_name}</p>
-                      </div>
-                    </Button>
-                  </motion.div>
-                )
-              )}
-            </div>
-          </motion.div>
-        </div>
+      {isVoting && userId && (
+        <VotingModal
+          userId={userId}
+          playersMap={playersMap}
+          votingCountdown={votingCountdown}
+          handleVote={handleVote}
+        />
       )}
 
       {winner && winnerScreenVisible && !animationStep2 && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.25 }}
-          onClick={() => {
-            setWinnerScreenVisible(false);
-          }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 "
-        >
-          <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start ">
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, y: -50 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-            >
-              The chat voted for...
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [1], y: -50 }}
-              transition={{
-                duration: 1,
-                ease: "easeOut",
-                delay: 0.75,
-              }}
-              className="flex items-center flex-col gap-4"
-            >
-              <motion.img
-                animate={{ rotateY: [0, 1080] }}
-                transition={{ delay: 0.75, duration: 1.5, ease: "easeOut" }}
-                onAnimationComplete={() => {
-                  setAnimationStep2(true);
-                }}
-                src={`/avatars/Cute-portraits_${winner.avatar}.png`}
-                alt="Winner's avatar"
-                className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
-              />
-            </motion.div>
-          </div>
-        </motion.button>
+        <AnimationStep1
+          winner={winner}
+          setWinnerScreenVisible={setWinnerScreenVisible}
+          setAnimationStep2={setAnimationStep2}
+        />
       )}
 
       {winner && winnerScreenVisible && animationStep2 && (
-        <button
-          onClick={() => {
-            {
-              setWinnerScreenVisible(false);
-              setAnimationStep2(false);
-            }
-          }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 "
-        >
-          <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start">
-            <motion.p
-              initial={{ y: 0 }}
-              animate={{ opacity: 0, y: -100 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-            >
-              The chat voted for...
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 1, y: 0 }}
-              animate={{ y: -130 }}
-              transition={{
-                duration: 1,
-                ease: "easeOut",
-              }}
-              className="flex items-center flex-col gap-4"
-            >
-              <motion.img
-                src={`/avatars/Cute-portraits_${winner.avatar}.png`}
-                alt="Winner's avatar"
-                className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
-              />
-              <p className="text-xl">{winner.game_name}</p>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: [0, 1, 0, 1, 0, 1],
-                }}
-                transition={{
-                  delay: 1.75,
-                  ease: "linear",
-                  times: [0, 0.1, 0.2, 0.3, 0.4, 1],
-                }}
-                className="text-red-400"
-              >
-                {winner.is_ai && "AI DETECTED"}
-                {!winner.is_ai && "NOT AN AI"}
-              </motion.p>
-            </motion.div>
-            <motion.h1
-              initial={{ opacity: 0, y: -120 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 2.75, duration: 0.25, ease: "easeOut" }}
-              className="text-xl  text-center text-red-400"
-            >
-              {winner.user_id === userId && "YOU WIN!"}
-              {winner.is_ai && "HUMANS WIN!"}
-              {!winner.is_ai && "HUMANS LOSE!"}
-            </motion.h1>
-            <ReturnButton />
-          </div>
-        </button>
+        <AnimationStep2 winner={winner} userId={userId} />
       )}
     </div>
   );

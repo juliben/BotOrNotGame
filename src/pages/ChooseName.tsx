@@ -1,42 +1,18 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@radix-ui/react-label";
-import axios from "axios";
-import { motion } from "motion/react";
-
-import { names, spanishNames } from "../../constants.ts";
-
-// import cutePortrait from "../assets/avatars/Cute-portraits_01.png";
-import { IoDice } from "react-icons/io5";
-
-import { useNavigate } from "react-router-dom";
 import supabase from "../api/supabase";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { signInAnonymously } from "@/api/supabaseAuth";
+
+import { Gradient, Input, Checkbox, Card } from "./../components/ui";
+import { DiceButton } from "./../components/DiceButton";
+import { Label } from "@radix-ui/react-label";
+import { useAvatar, useGetName } from "@/services/hooks/";
 
 const ChooseName = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
   const [ready, setReady] = useState(false);
-
-  const [randomAvatarNumber, setRandomAvatarNumber] = useState<string | null>(
-    null
-  );
-
-  // Avatar randomizer
-
-  const randomizer = () => {
-    const random = Math.floor(Math.random() * 76) + 1;
-    const number = String(random).padStart(2, "0");
-    setRandomAvatarNumber(number);
-  };
-
-  useEffect(() => {
-    randomizer();
-  }, []);
-
-  const avatarUrl = `/avatars/Cute-portraits_${randomAvatarNumber}.png`;
+  const { avatarUrl, randomAvatarNumber, roll } = useAvatar();
+  const { name, getName, setName } = useGetName();
 
   // When ready, sign in as anon and update table with data
   const handleReady = async () => {
@@ -60,32 +36,10 @@ const ChooseName = () => {
     navigate("/lobby/" + userId);
   };
 
-  const getName = () => {
-    const randomName = names[Math.floor(Math.random() * names.length)];
-    setName(randomName);
-  };
-
   return (
-    <div className="flex flex-col flex-1 p-4 px-6 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.5 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-[var(--gradient)] h-full w-full rounded-full absolute -z-1 blur-3xl opacity-50 top-0 left-0"
-      />
-
-      <motion.div
-        initial={{ translateX: 400, rotate: 10, opacity: 0.5 }}
-        animate={{ translateX: 0, rotate: 0, opacity: 1 }}
-        exit={{
-          translateX: -400,
-          rotate: -10,
-          opacity: 0,
-        }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col py-15 md:w-2/3 lg:w-1/2 flex-1 items-center justify-center h-2/3 w-full p-4 gap-7 border-2 rounded-xl bg-[#353b85] shadow-lg"
-      >
+    <div className="container">
+      <Gradient />
+      <Card>
         <p>Create your character:</p>
         <div className={"flex row gap-3 justify-center w-full px-5   "}>
           <Input
@@ -95,34 +49,14 @@ const ChooseName = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <Button
-            onClick={getName}
-            className="border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground rounded-md border bg-[#2c2971] shadow-xs transition-[color,box-shadow]"
-          >
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9, rotate: 360 }}
-            >
-              <IoDice className={"text-white rotate-12 size-5"} />
-            </motion.div>
-          </Button>
+          <DiceButton onClick={getName} />
         </div>
         <div className={"flex flex-row justify-center items-center gap-3"}>
           <img
             src={avatarUrl}
             className={"flex w-14 h-14 rounded-full border ring-border"}
           />
-          <Button
-            onClick={() => randomizer()}
-            className="border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground rounded-md border bg-[#2c2971] shadow-xs transition-[color,box-shadow]"
-          >
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9, rotate: 360 }}
-            >
-              <IoDice className={"text-white rotate-12 size-5"} />
-            </motion.div>
-          </Button>
+          <DiceButton onClick={roll} />
         </div>
 
         <div className="flex flex-row justify-center items-center gap-2">
@@ -135,7 +69,7 @@ const ChooseName = () => {
             I'm ready
           </Label>
         </div>
-      </motion.div>
+      </Card>
     </div>
   );
 };

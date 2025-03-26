@@ -9,7 +9,7 @@ type Props = {
 // Random numbers for anon avatar
 const anonNumber = Math.floor(Math.random() * 9) + 1;
 
-const PlayersRow = ({ playersMap, userId, isRevealed }: Props) => {
+export const PlayersRow = ({ playersMap, userId, isRevealed }: Props) => {
   return Object.entries(playersMap).map(([key, player]) => (
     <li className={""} key={key}>
       {player.user_id === userId ? (
@@ -28,7 +28,7 @@ const PlayersRow = ({ playersMap, userId, isRevealed }: Props) => {
             src={
               isRevealed
                 ? `/avatars/Cute-portraits_${player.avatar}.png`
-                : `/avatars/anons/anon${anonNumber}.png`
+                : `/avatars/anons/anon3.png`
             }
           />
 
@@ -38,5 +38,3 @@ const PlayersRow = ({ playersMap, userId, isRevealed }: Props) => {
     </li>
   ));
 };
-
-export default PlayersRow;

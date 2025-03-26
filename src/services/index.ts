@@ -1,4 +1,3 @@
-export * from "./addAiToRoom";
 export * from "./assignNumbersToPlayers";
 export * from "./createAiPlayer";
 export * from "./fetchPlayers";
@@ -14,3 +13,5 @@ export * from "./sendMessagesToAi";
 export * from "./startPinging";
 export * from "./getLeaderId";
 export * from "./sendMyVoteAsMessage";
+export * from "./avatarRandomizer";
+export * from "./generateRandomName";

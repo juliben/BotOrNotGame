@@ -1,5 +1,4 @@
 import supabase from "@/api/supabase.ts";
-import { AI_USER_ID } from "../../constants.ts";
 import { getUserId } from "./getUserId.ts";
 
 const countVotes = (votes) =>

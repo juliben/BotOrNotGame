@@ -4,7 +4,7 @@ type Props = {
   readyCount: number;
 };
 
-export function ReadyCountDisplay({ readyCount }: Props) {
+export const ReadyCountDisplay = ({ readyCount }: Props) => {
   return (
     <div>
       Waiting for players to join...{" "}
@@ -23,4 +23,4 @@ export function ReadyCountDisplay({ readyCount }: Props) {
       /4
     </div>
   );
-}
+};

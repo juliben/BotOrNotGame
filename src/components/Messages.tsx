@@ -27,12 +27,7 @@ const nameStyles = {
   4: "text-[#e6b3e6] font-medium",
 };
 
-export const Messages = ({
-  messages,
-  playersMap,
-  userId,
-  messagesEndRef,
-}: Props) => {
+export const Messages = ({ messages, playersMap, userId }: Props) => {
   return (
     <>
       {messages.map((msg, index) => {

@@ -159,3 +159,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .container {
+    @apply flex flex-col flex-1 p-4 px-6 justify-center items-center gap-5 mt-20 font-jersey text-2xl text-center;
+  }
+  .card {
+    @apply flex flex-col py-15 md:w-2/3 lg:w-1/2 flex-1 items-center justify-center h-2/3 w-full p-4 gap-7 border-2 rounded-xl bg-[#353b85] shadow-lg;
+  }
+  .chatbox {
+    @apply flex-1 flex flex-col overflow-y-scroll bg-[#2c2971] my-3 rounded-lg border max-h-dvh gap-2;
+  }
+}

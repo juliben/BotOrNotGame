@@ -3,8 +3,8 @@ import { ReturnButton } from "./ui/ReturnButton";
 
 interface Props {
   winner: Partial<User>;
-  setWinnerScreenVisible: (visible: boolean) => void;
   userId: string;
+  setWinnerScreenVisible: (visible: boolean) => void;
 }
 
 export const AnimationStep2 = ({

@@ -11,7 +11,7 @@ const nameColors = {
   4: "text-[#be63be] px-1 font-medium",
 };
 
-const PlayerNames = ({ playersMap }: Props) => {
+export const PlayerNames = ({ playersMap }: Props) => {
   return (
     <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
       {Object.values(playersMap).map((player, index) => (
@@ -29,5 +29,3 @@ const PlayerNames = ({ playersMap }: Props) => {
     </p>
   );
 };
-
-export default PlayerNames;

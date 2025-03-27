@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { User } from "types";
 
 interface Props {
-  winner: Partial<User>;
+  winner: Partial<User> | "ALL_HUMANS_WIN";
   setWinnerScreenVisible: (visible: boolean) => void;
   setAnimationStep2: (visible: boolean) => void;
 }

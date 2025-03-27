@@ -1,8 +1,9 @@
 import { motion } from "motion/react";
 import { ReturnButton } from "./ui/ReturnButton";
+import { User } from "types";
 
 interface Props {
-  winner: Partial<User>;
+  winner: Partial<User> | "ALL_HUMANS_WIN";
   userId: string;
   setWinnerScreenVisible: (visible: boolean) => void;
 }

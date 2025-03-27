@@ -15,7 +15,7 @@ import {
   getLeaderId,
   fetchPlayers,
   sendMyVoteAsMessage,
-  processVotes,
+  getAiVote,
 } from "../services/";
 
 import { User } from "../../types.ts";
@@ -29,7 +29,6 @@ import {
 } from "@/services/hooks/";
 import { useGetAiUser } from "@/services/hooks/useGetAiUser.ts";
 import OnlyLeftModal from "@/components/OnlyLeftModal.tsx";
-import { set } from "lodash";
 
 const Room = () => {
   const navigate = useNavigate();
@@ -60,7 +59,8 @@ const Room = () => {
   //
   const messages = useMessagesChannel(roomId);
   const votes = useVoteChannel(roomId);
-  const winner = null;
+  const resultRef = useRef<string | undefined>(null); // User id
+  const winnerRef = useRef<Partial<User> | "ALL_HUMANS_WIN" | null>(null); // Result of interpreting the vote results
 
   // Initial refetch just in case
   useEffect(() => {
@@ -126,29 +126,38 @@ const Room = () => {
     aiUserRef,
   });
 
-  useEffect(() => {
-    if (!votes || onlyLeft) return;
-    if (votes.length >= Object.keys(playersMap).length - 1) {
-      console.log("All votes are in:", votes.length);
-
-      // processVotes(votes);
-    }
-  }, [votes]);
-
-  useEffect(() => {
-    if (Object.keys(playersMap).length <= 2) {
-      // It's only you and the AI left.
-      setShowOnlyLeft(true);
-      setOnlyLeft(true);
-    }
-  }, [playersMap]);
-
   // Scroll to the bottom of the messages container
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (!votes || onlyLeft || !aiUserRef.current) return;
+    if (votes.length >= Object.keys(playersMap).length - 1) {
+      console.log("All votes are in: " + votes.length + " votes");
+
+      resultRef.current = getAiVote({
+        votes,
+        aiUserId: aiUserRef.current.user_id,
+      });
+      interpretResult();
+      setWinnerScreenVisible(true);
+    }
+  }, [votes]);
+
+  const interpretResult = () => {
+    if (!resultRef.current || !aiUserRef.current) return;
+    if (resultRef.current === aiUserRef.current.user_id) {
+      // AI gets caught out, humans win
+      winnerRef.current = "ALL_HUMANS_WIN";
+    }
+    if (resultRef.current !== aiUserRef.current.user_id) {
+      // A human is the winner
+      winnerRef.current = playersMap[resultRef.current];
+    }
+  };
 
   // Callback function for voting countdown
   // const startVotingCountdown = () => {
@@ -165,6 +174,15 @@ const Room = () => {
   //     }
   //   }, 1000);
   // };
+
+  // You're the only human player left
+  useEffect(() => {
+    if (Object.keys(playersMap).length <= 2) {
+      // It's only you and the AI left.
+      setShowOnlyLeft(true);
+      setOnlyLeft(true);
+    }
+  }, [playersMap]);
 
   const handleSendMessage = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -288,16 +306,16 @@ const Room = () => {
         />
       )}
 
-      {winner && winnerScreenVisible && !animationStep2 && (
+      {winnerRef.current && winnerScreenVisible && !animationStep2 && (
         <AnimationStep1
-          winner={winner}
+          winner={winnerRef.current}
           setWinnerScreenVisible={setWinnerScreenVisible}
           setAnimationStep2={setAnimationStep2}
         />
       )}
-      {winner && winnerScreenVisible && animationStep2 && userId && (
+      {winnerRef.current && winnerScreenVisible && animationStep2 && userId && (
         <AnimationStep2
-          winner={winner}
+          winner={winnerRef.current}
           userId={userId}
           setWinnerScreenVisible={setWinnerScreenVisible}
         />

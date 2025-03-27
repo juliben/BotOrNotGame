@@ -8,7 +8,7 @@ interface Props {
 
 const OnlyLeftModal = ({ goBack, dismiss }: Props) => {
   return (
-    <div className="fixed inset-0 flex items-center justify-center font-press-start text-x ">
+    <div className="fixed inset-0 flex items-center justify-center font-press-start text-x bg-black/35">
       <motion.button
         initial={{
           scale: 0.5,

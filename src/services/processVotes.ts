@@ -1,79 +1,37 @@
-import supabase from "@/api/supabase.ts";
-import { getUserId } from "./getUserId.ts";
+interface Props {
+  votes: string[];
+  aiUserId: string;
+}
 
-const countVotes = (votes) =>
-  votes.reduce((acc, { vote }) => {
-    return { ...acc, [vote]: (acc[vote] || 0) + 1 };
+// I will always have either 3 or 2 human votes + AI vote afterwards
+// This function returns who the AI should vote for (or returns aiUserId if there's no chance the AI will win)
+// But effectively it will return who wins (or loses, in case of the AI)
+export const getAiVote = ({ votes, aiUserId }: Props) => {
+  const voteCount = votes.reduce((acc: { [key: string]: number }, vote) => {
+    acc[vote] = (acc[vote] || 0) + 1;
+    return acc;
   }, {});
 
-// Processes the votes and returns the winner
-export const processVotes = (currentVotes, namesWithIds, roomId) => {
-  if (!currentVotes || !currentVotes.length) {
-    console.log("No votes received. AI wins by default.");
-    return;
-  }
-  const voteCounts = countVotes(currentVotes);
+  const maxVotes = Math.max(...(Object.values(voteCount) as number[]));
 
-  // For the purpose of choosing the AI's vote
-  // Filter out any count for the AI.
-  const humanVoteCounts = Object.entries(voteCounts)
-    .filter(([candidateId]) => candidateId !== AI_USER_ID)
-    .reduce(
-      (acc, [candidateId, count]) => ({ ...acc, [candidateId]: count }),
-      {}
-    );
+  const topVotedIds = Object.entries(voteCount)
+    .filter(([_, count]) => count === maxVotes)
+    .map(([userId]) => userId);
 
-  // 3. Determine the highest count among human candidates.
-  const maxHumanVotes = Math.max(...Object.values(humanVoteCounts));
-
-  // Get all human candidate IDs that reached the highest count.
-  const topHumanCandidates = Object.entries(humanVoteCounts)
-    .filter(([id, count]) => count === maxHumanVotes)
-    .map(([id]) => id);
-
-  // Choose one candidate randomly if there's a tie.
-  const candidateToVoteFor =
-    topHumanCandidates.length > 1
-      ? topHumanCandidates[
-          Math.floor(Math.random() * topHumanCandidates.length)
-        ]
-      : topHumanCandidates[0];
-
-  // 4. Retrieve candidate info and cast the AI's vote.
-  const mostVotedPlayer = namesWithIds.find(
-    (player) => player.user_id === candidateToVoteFor
-  );
-
-  const aiPlayer = namesWithIds.find((player) => player.user_id === AI_USER_ID);
-
-  if (!mostVotedPlayer || !aiPlayer) {
-    console.log("Could not determine the candidate or AI player.");
-    return null;
+  // This covers when there's only one most voted, or a tie between two humans
+  if (!topVotedIds.includes(aiUserId)) {
+    return topVotedIds[0];
   }
 
-  console.log("Winner decided by AI vote: ", mostVotedPlayer.game_name);
+  // AI is tied with a human (or more than one)
+  if (topVotedIds.length > 1 && topVotedIds.includes(aiUserId)) {
+    // Vote for the first one that's not the AI
+    return topVotedIds.filter((id) => id !== aiUserId)[0];
+  }
 
-  // Send AI's vote to Supabase as a message
-  const sendAiMessage = async () => {
-    // First check if I am the first player (so as to not send multiple messages)
-    const myId = await getUserId();
-    if (namesWithIds[0].user_id !== myId) {
-      return;
-    }
-
-    const { error } = await supabase.from("messages").insert([
-      {
-        room_id: roomId,
-        sender_id: AI_USER_ID,
-        content: `${aiPlayer.game_name} voted for ${mostVotedPlayer.game_name}.`,
-        is_vote: true,
-      },
-    ]);
-
-    if (error) {
-      console.log("Error sending AI message:", error);
-    }
-  };
-  sendAiMessage();
-  return mostVotedPlayer;
+  if (topVotedIds.length === 1 && topVotedIds[0] === aiUserId) {
+    return aiUserId; // AI is alone at the top
+  }
 };
+
+// Handle sending the vote/declaring the winner in the parent

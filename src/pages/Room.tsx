@@ -127,7 +127,7 @@ const Room = () => {
   });
 
   useEffect(() => {
-    if (!votes) return;
+    if (!votes || onlyLeft) return;
     if (votes.length >= Object.keys(playersMap).length - 1) {
       console.log("All votes are in:", votes.length);
 

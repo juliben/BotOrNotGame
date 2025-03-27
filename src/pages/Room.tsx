@@ -233,12 +233,14 @@ const Room = () => {
         >
           Vote now (debug)
         </button>
-        <p
-          className={`self-end mb-3 font-press-start text-xs 
+        {!onlyLeft && (
+          <p
+            className={`self-end mb-3 font-press-start text-xs 
           } ${countdown < 30 ? "text-red-400" : ""}`}
-        >
-          {formattedTime}
-        </p>
+          >
+            {formattedTime}
+          </p>
+        )}
       </div>
 
       <div
@@ -270,7 +272,7 @@ const Room = () => {
           <Button onClick={handleSendMessage}>Send</Button>
         </form>
       </div>
-      {isVoting && allOk && (
+      {isVoting && allOk && !onlyLeft && (
         <VotingModal
           userId={userId}
           playersMap={playersMap}

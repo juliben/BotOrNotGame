@@ -9,9 +9,23 @@ interface Props {
 const OnlyLeftModal = ({ goBack, dismiss }: Props) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center font-press-start text-x ">
-      <button onClick={dismiss} className={"absolute right-10 top-50"}>
+      <motion.button
+        initial={{
+          scale: 0.5,
+        }}
+        animate={{
+          scale: 1,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 260,
+          damping: 20,
+        }}
+        onClick={dismiss}
+        className={"absolute right-10 top-50"}
+      >
         X
-      </button>
+      </motion.button>
       <motion.div
         initial={{
           scale: 0.5,

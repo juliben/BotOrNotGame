@@ -29,6 +29,7 @@ import {
 } from "@/services/hooks/";
 import { useGetAiUser } from "@/services/hooks/useGetAiUser.ts";
 import OnlyLeftModal from "@/components/OnlyLeftModal.tsx";
+import { set } from "lodash";
 
 const Room = () => {
   const navigate = useNavigate();
@@ -138,6 +139,7 @@ const Room = () => {
     if (Object.keys(playersMap).length <= 2) {
       // It's only you and the AI left.
       setShowOnlyLeft(true);
+      setOnlyLeft(true);
     }
   }, [playersMap]);
 
@@ -213,14 +215,16 @@ const Room = () => {
     }
   };
 
-  const handleExit = () => {
-    navigate("/");
-  };
-
   return (
     <div className={`flex flex-col p-4 min-h-dvh max-h-dvh bg-[#353b85] `}>
-      <div className="flex flex-row  gap-2 justify-between">
-        <ExitButton onClick={handleExit} children={"Exit"} />
+      <div
+        className={`flex flex-row  gap-2 justify-between ${
+          blurScreen ? "blur-xs pointer-events-none" : ""
+        }`}
+      >
+        {onlyLeft && (
+          <ExitButton onClick={() => navigate("/")} children={"Exit"} />
+        )}
         <button
           className={
             "border-2 border-white/50 px-2 rounded-sm hover:bg-white/10"
@@ -276,7 +280,10 @@ const Room = () => {
       )}
 
       {showOnlyLeft && allOk && (
-        <OnlyLeftModal onClick={() => setShowOnlyLeft(false)} />
+        <OnlyLeftModal
+          goBack={() => navigate("/")}
+          dismiss={() => setShowOnlyLeft(false)}
+        />
       )}
 
       {winner && winnerScreenVisible && !animationStep2 && (

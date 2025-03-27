@@ -2,12 +2,16 @@ import { motion } from "motion/react";
 import { ExitButton } from "./ExitButton";
 
 interface Props {
-  onClick: () => void;
+  goBack: () => void;
+  dismiss: () => void;
 }
 
-const OnlyLeftModal = ({ onClick }: Props) => {
+const OnlyLeftModal = ({ goBack, dismiss }: Props) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center font-press-start text-x ">
+      <button onClick={dismiss} className={"absolute right-10 top-50"}>
+        X
+      </button>
       <motion.div
         initial={{
           scale: 0.5,
@@ -26,7 +30,7 @@ const OnlyLeftModal = ({ onClick }: Props) => {
           You and the AI are the only players left
         </h1>
         <div className={"w-1/2 sm:w-1/4 mx-auto hover:cursor-pointer"}>
-          <ExitButton onClick={onClick} children={"Return to Lobby"} />
+          <ExitButton onClick={goBack} children={"Return to Lobby"} />
         </div>
       </motion.div>
     </div>

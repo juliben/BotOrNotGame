@@ -9,7 +9,7 @@ export const useFetchPlayersMap = (roomId?: string | null) => {
     if (!roomId) {
       return;
     }
-    fetchPlayers({ roomId }).then((playersMap) => {
+    fetchPlayers(roomId).then((playersMap) => {
       if (playersMap) {
         setPlayersMap(playersMap);
         setPlayerCount(Object.keys(playersMap).length);

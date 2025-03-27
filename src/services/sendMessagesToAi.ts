@@ -8,7 +8,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Send request to API, then process the response, and insert into Supabase
 export const sendMessagesToAi = async (
-  roomId: string,
+  roomId: string | undefined,
   messages: Message[],
   aiUser: any
 ) => {

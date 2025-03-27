@@ -6,9 +6,9 @@ type Props = {
 
 const nameColors = {
   1: "text-[#8f80ef] px-1 font-medium",
-  2: "text-[#83b3ea] px-1 font-medium",
+  2: "text-[#72a4df] px-1 font-medium",
   3: "text-[#1dbdc2] px-1 font-medium",
-  4: "text-[#be63be] px-1 font-medium",
+  4: "text-[#9a319a] px-1 font-medium",
 };
 
 export const PlayerNames = ({ playersMap }: Props) => {

@@ -1,7 +1,7 @@
 import { Message, User } from "types";
 
 interface Props {
-  messages: Message[];
+  messages: Partial<Message>[];
   playersMap: Record<string, Partial<User>>;
   userId: string;
 }

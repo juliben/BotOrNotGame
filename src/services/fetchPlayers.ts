@@ -1,11 +1,7 @@
 import supabase from "../api/supabase";
 import { User } from "../../types";
 
-type Props = {
-  roomId: string;
-};
-
-export const fetchPlayers = async ({ roomId }: Props) => {
+export const fetchPlayers = async (roomId: string | undefined) => {
   const { data, error } = await supabase
     .from("players")
     .select("user_id, game_name, avatar, is_ai, number")

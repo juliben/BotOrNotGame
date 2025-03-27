@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import supabase from "../api/supabase";
 import { Button, Input } from "@/components/ui";
 
@@ -8,12 +8,14 @@ import { PlayerNames } from "./../components/PlayerNames.tsx";
 import { VotingModal } from "./../components/VotingModal.tsx";
 import { AnimationStep1 } from "./../components/AnimationStep1.tsx";
 import { AnimationStep2 } from "./../components/AnimationStep2.tsx";
+import { ExitButton } from "@/components/ExitButton.tsx";
 
 import {
   getUserId,
   getLeaderId,
   fetchPlayers,
   sendMyVoteAsMessage,
+  processVotes,
 } from "../services/";
 
 import { User } from "../../types.ts";
@@ -26,14 +28,21 @@ import {
   useVoteChannel,
 } from "@/services/hooks/";
 import { useGetAiUser } from "@/services/hooks/useGetAiUser.ts";
+import OnlyLeftModal from "@/components/OnlyLeftModal.tsx";
 
 const Room = () => {
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
-  const { countdown, isVoting } = useMainCountdown();
+  const { countdown, formattedTime, isVoting, setIsVoting } =
+    useMainCountdown();
   const [votingCountdown, setVotingCountdown] = useState(10000);
+
+  const [onlyLeft, setOnlyLeft] = useState(false);
+  const [showOnlyLeft, setShowOnlyLeft] = useState(false);
 
   const [winnerScreenVisible, setWinnerScreenVisible] = useState(false);
   const [animationStep2, setAnimationStep2] = useState(false);
+  const blurScreen = isVoting || winnerScreenVisible || showOnlyLeft;
 
   // Important data coming from the Lobby
   const roomId = useParams().roomId;
@@ -43,9 +52,14 @@ const Room = () => {
       return (location.state as { playersMap: any })?.playersMap || {};
     }
   );
+  const playersMapRef = useRef(playersMap);
   const [userId, setUserId] = useState<string | null>(() => {
     return (location.state as { userId: any })?.userId || null;
   });
+  //
+  const messages = useMessagesChannel(roomId);
+  const votes = useVoteChannel(roomId);
+  const winner = null;
 
   // Initial refetch just in case
   useEffect(() => {
@@ -56,14 +70,29 @@ const Room = () => {
       });
     }
     if (!roomId) return;
-    fetchPlayers({ roomId }).then((playersMap) => {
-      if (!playersMap) return;
-      setPlayersMap(playersMap);
+    fetchPlayers(roomId).then((playersMap) => {
+      if (playersMap) {
+        setPlayersMap(playersMap);
+      }
     });
   }, []);
 
   useStartPinging(userId);
-  const messages = useMessagesChannel({ roomId });
+
+  // For refetching player map after someone disconnects
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    const lastMessage = messages[messages.length - 1];
+
+    if (lastMessage.is_from_server) {
+      // Someone disconnected
+      fetchPlayers(roomId).then((playersMap) => {
+        if (playersMap) {
+          setPlayersMap(playersMap);
+        }
+      });
+    }
+  }, [messages]);
 
   const leaderIdRef = useRef<string | null>(null);
   // Get a new? leader when playersMap changes (someone disconnects)
@@ -77,7 +106,7 @@ const Room = () => {
   useGetAiUser({ playersMap, aiUserRef });
 
   // For scrolling to bottom on new messages
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const allOk = !!(roomId && userId && aiUserRef.current && playersMap);
 
@@ -96,10 +125,21 @@ const Room = () => {
     aiUserRef,
   });
 
-  const winner = useVoteChannel({
-    roomId,
-    setWinnerScreenVisible,
-  });
+  useEffect(() => {
+    if (!votes) return;
+    if (votes.length >= Object.keys(playersMap).length - 1) {
+      console.log("All votes are in:", votes.length);
+
+      // processVotes(votes);
+    }
+  }, [votes]);
+
+  useEffect(() => {
+    if (Object.keys(playersMap).length <= 2) {
+      // It's only you and the AI left.
+      setShowOnlyLeft(true);
+    }
+  }, [playersMap]);
 
   // Scroll to the bottom of the messages container
   useEffect(() => {
@@ -173,25 +213,39 @@ const Room = () => {
     }
   };
 
+  const handleExit = () => {
+    navigate("/");
+  };
+
   return (
     <div className={`flex flex-col p-4 min-h-dvh max-h-dvh bg-[#353b85] `}>
-      <p
-        className={`self-end mb-3 font-press-start text-xs  ${
-          countdown > 30 ? "text-foreground" : "text-red-500"
-        }`}
-      >
-        {countdown}
-      </p>
-      <button onClick={() => setIsVoting(true)}>Debug</button>
+      <div className="flex flex-row  gap-2 justify-between">
+        <ExitButton onClick={handleExit} children={"Exit"} />
+        <button
+          className={
+            "border-2 border-white/50 px-2 rounded-sm hover:bg-white/10"
+          }
+          onClick={() => console.log(votes)}
+        >
+          Vote now (debug)
+        </button>
+        <p
+          className={`self-end mb-3 font-press-start text-xs 
+          } ${countdown < 30 ? "text-red-400" : ""}`}
+        >
+          {formattedTime}
+        </p>
+      </div>
+
       <div
-        className={`chatbox ${isVoting ? "blur-xs pointer-events-none" : ""}`}
+        className={`chatbox ${blurScreen ? "blur-xs pointer-events-none" : ""}`}
       >
         {playersMap && <PlayerNames playersMap={playersMap} />}
         {playersMap && userId && (
           <>
             <Messages
               messages={messages ?? []}
-              playersMap={playersMap}
+              playersMap={playersMapRef.current}
               userId={userId}
             />
             <div ref={messagesEndRef} />
@@ -200,7 +254,7 @@ const Room = () => {
       </div>
       <div
         className={`flex gap-2 mt-auto ${
-          isVoting || winnerScreenVisible ? " blur-xs pointer-events-none" : ""
+          blurScreen ? "blur-xs pointer-events-none" : ""
         }`}
       >
         <form onSubmit={handleSendMessage} className="flex gap-2 min-w-full">
@@ -212,13 +266,17 @@ const Room = () => {
           <Button onClick={handleSendMessage}>Send</Button>
         </form>
       </div>
-      {isVoting && userId && (
+      {isVoting && allOk && (
         <VotingModal
           userId={userId}
           playersMap={playersMap}
           votingCountdown={votingCountdown}
           handleVote={handleVote}
         />
+      )}
+
+      {showOnlyLeft && allOk && (
+        <OnlyLeftModal onClick={() => setShowOnlyLeft(false)} />
       )}
 
       {winner && winnerScreenVisible && !animationStep2 && (

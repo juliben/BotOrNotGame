@@ -2,15 +2,11 @@ import { useEffect, useState } from "react";
 import supabase from "../../api/supabase";
 import { Message } from "types";
 
-interface Props {
-  roomId: string | undefined;
-}
-
-export const useMessagesChannel = ({ roomId }: Props) => {
+export const useMessagesChannel = (roomId: string | undefined) => {
   if (!roomId) {
     return;
   }
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Partial<Message>[]>([]);
   // Messages channel subscription
   useEffect(() => {
     console.log("Subscribing to messages channel, roomId: " + roomId);

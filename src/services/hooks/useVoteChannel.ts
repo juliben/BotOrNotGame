@@ -1,17 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import supabase from "../../api/supabase";
-import { processVotes } from "../processVotes";
 
-interface Props {
-  roomId: string | undefined;
-  setWinnerScreenVisible: (visible: boolean) => void;
-}
-export const useVoteChannel = ({ roomId, setWinnerScreenVisible }: Props) => {
-  const [winner, setWinner] = useState(null);
-  const [votes, setVotes] = useState([]);
+export const useVoteChannel = (roomId?: string) => {
+  if (!roomId) {
+    return;
+  }
+  // Array of user_ids of voted players
+  const [votes, setVotes] = useState<string[]>([]);
 
-  const winnerRef = useRef(null);
-  const votersRef = useRef([]);
+  // Array of user_ids of players that have already voted (important to not count duplicate votes when receiving ping payloads)
+  const votersRef = useRef<string[]>([]);
 
   // Vote channel subscription
   useEffect(() => {
@@ -27,20 +25,15 @@ export const useVoteChannel = ({ roomId, setWinnerScreenVisible }: Props) => {
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
+          // If the payload is not a vote, return (this will be receiving all pings so it's important)
           if (payload.new.voted_for === null || payload.new.room_id != roomId) {
             return;
           }
-          if (winnerRef.current) {
-            return;
-          }
 
-          const vote = {
-            vote: payload.new.voted_for,
-          };
+          const vote = payload.new.voted_for;
           const voter = payload.new.user_id;
 
-          // Check if it is a duplicate vote
-
+          // Check if it is a duplicate vote (it will be duplicate each time a player that has already voted pings)
           if (votersRef.current === null) {
             votersRef.current = [];
           }
@@ -50,18 +43,8 @@ export const useVoteChannel = ({ roomId, setWinnerScreenVisible }: Props) => {
 
           votersRef.current = [...votersRef.current, voter];
 
-          console.log("Received payload vote: " + vote.vote);
-          setVotes((prevVotes) => {
-            const updatedVotes = [...prevVotes, vote];
-            if (updatedVotes.length >= 3) {
-              clearInterval(votesTimerRef.current);
-              const winner = processVotes(updatedVotes, roomId);
-              winnerRef.current = winner;
-              setWinner(winner);
-              setWinnerScreenVisible(true);
-            }
-            return updatedVotes;
-          });
+          console.log("Received payload vote: " + vote);
+          setVotes((prevVotes) => [...prevVotes, vote]);
         }
       )
       .subscribe();
@@ -72,5 +55,5 @@ export const useVoteChannel = ({ roomId, setWinnerScreenVisible }: Props) => {
     };
   }, []);
 
-  return winner;
+  return votes;
 };

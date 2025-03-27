@@ -50,7 +50,7 @@ const TestScreen = ({}) => {
   useEffect(() => {
     if (readyToGo && roomId) {
       // Refetch players map
-      fetchPlayers({ roomId }).then((playersMap) => {
+      fetchPlayers(roomId).then((playersMap) => {
         if (playersMap) {
           setPlayersMap(playersMap);
           playersMapRef.current = playersMap;

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { ping } from "../index";
 
-export const useStartPinging = (userId?: string) => {
+export const useStartPinging = (userId: string | null) => {
   useEffect(() => {
     if (!userId) return;
     let pingInterval: any;

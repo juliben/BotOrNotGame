@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { sendMessagesToAi } from "../sendMessagesToAi";
+import { Message } from "types";
 
 interface Props {
   allOk: boolean;
   isLeader: boolean;
-  messages: Message[];
+  messages: Partial<Message>[] | undefined;
   roomId: string | undefined;
   aiUserRef: any;
 }
@@ -17,7 +18,7 @@ export const useSendMessagesToAi = ({
   aiUserRef,
 }: Props) => {
   useEffect(() => {
-    if (!allOk || !isLeader) {
+    if (!allOk || !isLeader || !messages) {
       return;
     }
 

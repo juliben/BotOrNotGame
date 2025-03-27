@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
 
 export const useMainCountdown = () => {
-  const [countdown, setCountdown] = useState(10000);
+  const [countdown, setCountdown] = useState(600);
   const [isVoting, setIsVoting] = useState(false);
+
+  const minutes = Math.floor(countdown / 60);
+  const seconds = countdown % 60;
+  const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds
+    .toString()
+    .padStart(2, "0")}`;
 
   useEffect(() => {
     const counter = setInterval(() => {
@@ -11,10 +17,7 @@ export const useMainCountdown = () => {
           if (prev <= 0) {
             clearInterval(counter);
             setIsVoting(true);
-            // startVotingCountdown();
 
-            // // This is the timer to count the votes after 12 seconds. It should be cleared in the votes channel subscription if enough votes are counted before the timeout
-            // startVotingTimer();
             return 0;
           }
           return prev - 1;
@@ -25,5 +28,5 @@ export const useMainCountdown = () => {
     return () => clearInterval(counter);
   }, []);
 
-  return { countdown, isVoting };
+  return { countdown, formattedTime, isVoting, setIsVoting };
 };

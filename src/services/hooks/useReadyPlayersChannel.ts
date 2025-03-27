@@ -45,7 +45,7 @@ export const useReadyPlayersChannel = ({
 
           console.log("Running this from the payload");
           // There's been a legit change -> Refetch
-          fetchPlayers({ roomId }).then((playersMap) => {
+          fetchPlayers(roomId).then((playersMap) => {
             if (playersMap) {
               console.log("Players map updated:", playersMap);
               setPlayersMap(playersMap);

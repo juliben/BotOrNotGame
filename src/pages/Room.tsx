@@ -252,7 +252,14 @@ const Room = () => {
           </p>
         )}
 
-        {resultRef.current && gameFinished && <p>Winner: Placeholder</p>}
+        {resultRef.current && aiUserRef.current && gameFinished && (
+          <p>
+            Winner:{" "}
+            {resultRef.current !== aiUserRef.current.user_id
+              ? playersMap[resultRef.current].game_name
+              : "Humans"}
+          </p>
+        )}
         {onlyLeft || gameFinished || disconnected ? (
           <QuitButton onClick={() => navigate("/")} />
         ) : null}
@@ -318,6 +325,7 @@ const Room = () => {
           setGameFinished={setGameFinished}
         />
       )}
+      <button onClick={() => setIsVoting(true)}>Debug</button>
     </div>
   );
 };

@@ -11,8 +11,14 @@ export const useMainCountdown = () => {
     .padStart(2, "0")}`;
 
   useEffect(() => {
+    const startTime = Date.now();
+    const initialCountdown = countdown;
+
     const counter = setInterval(() => {
-      if (countdown > 0) {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const newCountdown = initialCountdown - elapsed;
+
+      if (newCountdown > 0) {
         setCountdown((prev) => {
           if (prev <= 0) {
             clearInterval(counter);

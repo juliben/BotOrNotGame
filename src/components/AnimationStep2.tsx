@@ -91,9 +91,11 @@ export const AnimationStep2 = ({
           }}
           className="flex-center flex-col text-xl  text-center text-bright-pink"
         >
-          {result.user_id === userId && "YOU WIN!"}
-          {result.is_ai && "HUMANS WIN!"}
-          {!result.is_ai && "HUMANS LOSE!"}
+          <div className="flex flex-col">
+            {result.user_id === userId && <p>YOU WIN!</p>}
+            {result.is_ai && <p>HUMANS WIN!</p>}
+            {!result.is_ai && result.user_id !== userId && <p>HUMANS LOSE!</p>}
+          </div>
         </motion.h1>
         <motion.div
           initial={{ opacity: 0, y: -100 }}

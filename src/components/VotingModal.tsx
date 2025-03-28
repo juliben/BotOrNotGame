@@ -21,6 +21,7 @@ export const VotingModal = ({
   const randomIdRef = useRef<string | null>(null);
 
   // It doesn't matter if someone disconnects during voting time - the randomId to vote for is defined here at first render
+  // (Anyway it wouldn't matter because offline time to trigger disconnection is longer than voting time, but just in case)
   if (randomIdRef.current === null) {
     const voteOptions = Object.keys(playersMap).filter(
       (player) => player !== userId && player !== aiUserId
@@ -37,6 +38,7 @@ export const VotingModal = ({
           setSelection(randomIdRef.current);
           return 0;
         }
+        return prev - 1;
       });
     }, 1000);
     return () => clearInterval(counter);
@@ -50,7 +52,7 @@ export const VotingModal = ({
   }, [selection]);
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center font-press-start text-x ">
+    <div className="fixed inset-0 flex-center font-press-start text-x ">
       <motion.div
         initial={{
           scale: 0.5,
@@ -67,10 +69,14 @@ export const VotingModal = ({
       >
         <p className="text-center text-red-400 mb-3">{countdown}</p>
         <h1 className="text-center font-bold mb-5 ">Who's the bot?</h1>
-        <div className="flex flex-row flex-wrap item-center justify-center gap-0">
+        <div className="flex-center flex-row flex-wrap gap-0">
           {Object.values(playersMap).map((player) =>
             player.user_id === userId ? null : (
-              <PlayerVotingCard setSelection={setSelection} player={player} />
+              <PlayerVotingCard
+                key={player.user_id}
+                setSelection={setSelection}
+                player={player}
+              />
             )
           )}
         </div>

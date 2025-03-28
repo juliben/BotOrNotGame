@@ -1,3 +1,4 @@
+import { DisconnectedModal } from "./DisconnectedModal";
 import { ExitButton } from "./QuitButton";
 
 export * as AnimationStep1 from "./AnimationStep1";
@@ -11,3 +12,4 @@ export * as ReadyCountDisplay from "./ReadyCountDisplay";
 export * as VotingModal from "./VotingModal";
 export * as QuitButton from "./QuitButton";
 export * as XButton from "./XButton";
+export * as DisconnectedModal from "./DisconnectedModal";

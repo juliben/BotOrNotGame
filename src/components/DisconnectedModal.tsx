@@ -7,7 +7,7 @@ interface Props {
   dismiss: () => void;
 }
 
-const OnlyLeftModal = ({ dismiss }: Props) => {
+export const DisconnectedModal = ({ dismiss }: Props) => {
   const navigate = useNavigate();
   return (
     <div className="fixed inset-0 flex-center font-press-start text-x bg-black/35">
@@ -43,9 +43,7 @@ const OnlyLeftModal = ({ dismiss }: Props) => {
           }}
           className="p-4 m-4 w-full mb-20"
         >
-          <h1 className="text-center font-bold mb-5 ">
-            You and the AI are the only players left
-          </h1>
+          <h1 className="text-center font-bold mb-5 ">You have disconnected</h1>
           <div className={"flex-center w-1/2 sm:w-1/4 mx-auto"}>
             <QuitButton onClick={() => navigate("/")} />
           </div>
@@ -54,5 +52,3 @@ const OnlyLeftModal = ({ dismiss }: Props) => {
     </div>
   );
 };
-
-export default OnlyLeftModal;

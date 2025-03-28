@@ -1,21 +1,28 @@
 import { motion } from "motion/react";
 import { ReturnButton } from "./ui/ReturnButton";
 import { User } from "types";
+import { XButton } from "./XButton";
 
 interface Props {
   result: Partial<User>;
   userId: string;
-  setWinnerScreenVisible: (visible: boolean) => void;
+  dismiss: () => void;
+  setGameFinished: (finished: boolean) => void;
 }
 
 export const AnimationStep2 = ({
   result,
   userId,
-  setWinnerScreenVisible,
+  dismiss,
+  setGameFinished,
 }: Props) => {
+  const handlePress = () => {
+    setGameFinished(true);
+    dismiss();
+  };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 ">
-      <div className="flex flex-col items-center justify-center gap-4 rounded-xl   p-8 font-press-start">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 text-center ">
+      <div className="flex-center flex-col gap-4 rounded-xl   p-8 font-press-start">
         <motion.p
           initial={{
             y: 0,
@@ -63,7 +70,7 @@ export const AnimationStep2 = ({
               ease: "linear",
               times: [0, 0.1, 0.2, 0.3, 0.4, 1],
             }}
-            className="text-red-400"
+            className="text-[var(--color-bright-pink)]"
           >
             {result.is_ai && "AI DETECTED"}
             {!result.is_ai && "NOT AN AI"}
@@ -82,13 +89,19 @@ export const AnimationStep2 = ({
             duration: 0.25,
             ease: "easeOut",
           }}
-          className="text-xl  text-center text-red-400"
+          className="flex-center flex-col text-xl  text-center text-bright-pink"
         >
           {result.user_id === userId && "YOU WIN!"}
           {result.is_ai && "HUMANS WIN!"}
           {!result.is_ai && "HUMANS LOSE!"}
         </motion.h1>
-        <ReturnButton onClick={() => console.log(result)} />
+        <motion.div
+          initial={{ opacity: 0, y: -100 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 3.75 }}
+        >
+          <XButton onClick={handlePress} />
+        </motion.div>
       </div>
     </div>
   );

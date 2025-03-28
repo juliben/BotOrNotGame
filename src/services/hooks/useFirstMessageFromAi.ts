@@ -31,5 +31,5 @@ export const useFirstMessageFromAi = ({
     }
     getFirstMessageFromAi(roomId, aiUserRef.current);
     setSentFirstMessage(true);
-  }, [allOk]);
+  }, [allOk, isLeader]);
 };

@@ -29,6 +29,8 @@ import {
 } from "@/services/hooks/";
 import { useGetAiUser } from "@/services/hooks/useGetAiUser.ts";
 import OnlyLeftModal from "@/components/OnlyLeftModal.tsx";
+import { get } from "lodash";
+import { DisconnectedModal } from "@/components/DisconnectedModal.tsx";
 
 const Room = () => {
   const navigate = useNavigate();
@@ -42,6 +44,9 @@ const Room = () => {
   const [winnerScreenVisible, setWinnerScreenVisible] = useState(false);
   const [animationStep2, setAnimationStep2] = useState(false);
   const blurScreen = isVoting || winnerScreenVisible || showOnlyLeft;
+  const [gameFinished, setGameFinished] = useState(false);
+  const [disconnected, setDisconnected] = useState(false);
+  const [showDisconnected, setShowDisconnected] = useState(false);
 
   // Important data coming from the Lobby
   const roomId = useParams().roomId;
@@ -60,7 +65,7 @@ const Room = () => {
   const votes = useVoteChannel(roomId);
   const resultRef = useRef<string | undefined>(null); // User id
 
-  // Initial refetch just in case
+  // Initial & re-refetch just in case
   useEffect(() => {
     if (!userId) {
       getUserId().then((userId) => {
@@ -74,7 +79,7 @@ const Room = () => {
         setPlayersMap(playersMap);
       }
     });
-  }, []);
+  }, [userId, roomId]);
 
   useStartPinging(userId);
 
@@ -107,7 +112,13 @@ const Room = () => {
   // For scrolling to bottom on new messages
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const allOk = !!(roomId && userId && aiUserRef.current && playersMap);
+  const allOk = !!(
+    roomId &&
+    userId &&
+    aiUserRef.current &&
+    playersMap &&
+    !disconnected
+  );
 
   useFirstMessageFromAi({
     allOk,
@@ -144,12 +155,28 @@ const Room = () => {
     }
   }, [votes]);
 
-  // You're the only human player left
+  // You're the only human player left // You disconnected
   useEffect(() => {
-    if (Object.keys(playersMap).length <= 2) {
+    if (!userId) {
+      // Attempt reconnection
+      getUserId().then((userId) => {
+        if (!userId) {
+          setDisconnected(true);
+          return;
+        }
+        if (userId) setUserId(userId);
+      });
+      return;
+    }
+    if (Object.keys(playersMap).length <= 2 && playersMap[userId]) {
       // It's only you and the AI left.
       setShowOnlyLeft(true);
       setOnlyLeft(true);
+    }
+
+    if (playersMap[userId] === undefined) {
+      setDisconnected(true);
+      setShowDisconnected(true);
     }
   }, [playersMap]);
 
@@ -202,30 +229,33 @@ const Room = () => {
     }
   };
 
+  const handleDismiss = () => {
+    setIsVoting(false);
+    setShowOnlyLeft(false);
+    setWinnerScreenVisible(false);
+    setShowDisconnected(false);
+  };
+
   return (
     <div className={`flex flex-col p-4 min-h-dvh max-h-dvh bg-[#353b85] `}>
       <div
-        className={`flex flex-row  gap-2 justify-between ${
+        className={`flex flex-row-reverse justify-between items-center text-center ${
           blurScreen ? "blur-xs pointer-events-none" : ""
         }`}
       >
-        {onlyLeft && <QuitButton onClick={() => navigate("/")} />}
-        <button
-          className={
-            "border-2 border-white/50 px-2 rounded-sm hover:bg-white/10"
-          }
-          onClick={() => setIsVoting(true)}
-        >
-          Vote now (debug)
-        </button>
-        {!onlyLeft && (
+        {!onlyLeft && !gameFinished && !disconnected && (
           <p
-            className={`self-end mb-3 font-press-start text-xs 
+            className={`self-end  font-press-start text-xs py-2
           } ${countdown < 30 ? "text-red-400" : ""}`}
           >
             {formattedTime}
           </p>
         )}
+
+        {resultRef.current && gameFinished && <p>Winner: Placeholder</p>}
+        {onlyLeft || gameFinished || disconnected ? (
+          <QuitButton onClick={() => navigate("/")} />
+        ) : null}
       </div>
 
       <div
@@ -253,8 +283,11 @@ const Room = () => {
             placeholder="Type a message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            disabled={disconnected}
           />
-          <Button onClick={handleSendMessage}>Send</Button>
+          <Button onClick={handleSendMessage} disabled={disconnected}>
+            Send
+          </Button>
         </form>
       </div>
       {isVoting && allOk && !onlyLeft && aiUserRef.current && (
@@ -266,12 +299,9 @@ const Room = () => {
         />
       )}
 
-      {showOnlyLeft && allOk && (
-        <OnlyLeftModal
-          goBack={() => navigate("/")}
-          dismiss={() => setShowOnlyLeft(false)}
-        />
-      )}
+      {showDisconnected && <DisconnectedModal dismiss={handleDismiss} />}
+
+      {showOnlyLeft && allOk && <OnlyLeftModal dismiss={handleDismiss} />}
 
       {resultRef.current && winnerScreenVisible && !animationStep2 && (
         <AnimationStep1
@@ -284,7 +314,8 @@ const Room = () => {
         <AnimationStep2
           result={playersMap[resultRef.current]}
           userId={userId}
-          setWinnerScreenVisible={setWinnerScreenVisible}
+          dismiss={handleDismiss}
+          setGameFinished={setGameFinished}
         />
       )}
     </div>

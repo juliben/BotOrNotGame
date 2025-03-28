@@ -149,6 +149,7 @@
   --color-player-2-row: #83b3ea;
   --color-player-3-row: #1dbdc2;
   --color-player-4-row: #be63be;
+  --color-bright-pink: #ff0280;
 }
 
 @layer base {

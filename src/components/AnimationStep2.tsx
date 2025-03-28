@@ -6,6 +6,7 @@ interface Props {
   winner: Partial<User> | "ALL_HUMANS_WIN";
   userId: string;
   setWinnerScreenVisible: (visible: boolean) => void;
+  setAnimationStep2: (visible: boolean) => void;
 }
 
 export const AnimationStep2 = ({

@@ -1,15 +1,10 @@
-import axios from "axios";
 import supabase from "../api/supabase";
-import { getFirstName } from "./getFirstName";
+import { generateRandomName } from "./generateRandomName";
 
 // Create AI player in the player's table (number comes later)
 export const createAiPlayer = async (roomId) => {
   try {
-    console.log("Generating name for AI...");
-    const response = await axios.get("http://localhost:3000/name");
-
-    const generatedName = response.data.name;
-    const firstName = getFirstName(generatedName);
+    const name = generateRandomName();
 
     const randomNumber = Math.floor(Math.random() * 76) + 1;
     const number = String(randomNumber).padStart(2, "0");
@@ -18,7 +13,7 @@ export const createAiPlayer = async (roomId) => {
       .from("players")
       .insert([
         {
-          game_name: firstName,
+          game_name: name,
           avatar: number,
           is_ai: true,
           room_id: roomId,

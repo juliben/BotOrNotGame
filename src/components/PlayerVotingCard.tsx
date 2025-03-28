@@ -3,7 +3,7 @@ import { User } from "types";
 import { Button } from "./ui";
 
 interface Props {
-  handleVote: (votedId: string) => void;
+  setSelection: (votedId: string) => void;
   player: Partial<User>;
 }
 
@@ -14,7 +14,7 @@ const bubble = {
   4: "bg-[#660066]",
 };
 
-export const PlayerVotingCard = ({ handleVote, player }: Props) => {
+export const PlayerVotingCard = ({ setSelection, player }: Props) => {
   if (!player) {
     return null;
   }
@@ -29,7 +29,7 @@ export const PlayerVotingCard = ({ handleVote, player }: Props) => {
       }}
     >
       <Button
-        onClick={() => handleVote(player.user_id)}
+        onClick={() => setSelection(player.user_id)}
         className={`flex ${
           bubble[player.number]
         } items-center justify-center rounded-lg w-auto h-auto shadow-xl mx-2 mb-2  `}

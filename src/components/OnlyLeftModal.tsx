@@ -45,11 +45,7 @@ const OnlyLeftModal = ({ goBack, dismiss }: Props) => {
           <h1 className="text-center font-bold mb-5 ">
             You and the AI are the only players left
           </h1>
-          <div
-            className={
-              "flex-center w-1/2 sm:w-1/4 mx-auto hover:cursor-pointer"
-            }
-          >
+          <div className={"flex-center w-1/2 sm:w-1/4 mx-auto"}>
             <QuitButton onClick={() => console.log("clicked")} />
           </div>
         </motion.div>

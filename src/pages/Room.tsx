@@ -35,7 +35,6 @@ const Room = () => {
   const [input, setInput] = useState("");
   const { countdown, formattedTime, isVoting, setIsVoting } =
     useMainCountdown();
-  const [votingCountdown, setVotingCountdown] = useState(10000);
 
   const [onlyLeft, setOnlyLeft] = useState(false);
   const [showOnlyLeft, setShowOnlyLeft] = useState(false);
@@ -145,22 +144,6 @@ const Room = () => {
     }
   }, [votes]);
 
-  // Callback function for voting countdown
-  // const startVotingCountdown = () => {
-  //   const counter = setInterval(() => {
-  //     if (votingCountdown > 0) {
-  //       setVotingCountdown((prev) => {
-  //         if (prev <= 0) {
-  //           clearInterval(counter);
-  //           setIsVoting(false);
-  //           return 0;
-  //         }
-  //         return prev - 1;
-  //       });
-  //     }
-  //   }, 1000);
-  // };
-
   // You're the only human player left
   useEffect(() => {
     if (Object.keys(playersMap).length <= 2) {
@@ -231,7 +214,7 @@ const Room = () => {
           className={
             "border-2 border-white/50 px-2 rounded-sm hover:bg-white/10"
           }
-          onClick={() => setWinnerScreenVisible(true)}
+          onClick={() => setIsVoting(true)}
         >
           Vote now (debug)
         </button>
@@ -274,11 +257,11 @@ const Room = () => {
           <Button onClick={handleSendMessage}>Send</Button>
         </form>
       </div>
-      {isVoting && allOk && !onlyLeft && (
+      {isVoting && allOk && !onlyLeft && aiUserRef.current && (
         <VotingModal
-          userId={userId}
           playersMap={playersMap}
-          votingCountdown={votingCountdown}
+          userId={userId}
+          aiUserId={aiUserRef.current.user_id}
           handleVote={handleVote}
         />
       )}

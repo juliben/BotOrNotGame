@@ -21,7 +21,6 @@ export const useFirstMessageFromAi = ({
     if (!allOk || !isLeader) {
       return;
     }
-
     if (sentFirstMessage) {
       console.log("Already sent first message");
       return;
@@ -32,5 +31,5 @@ export const useFirstMessageFromAi = ({
     }
     getFirstMessageFromAi(roomId, aiUserRef.current);
     setSentFirstMessage(true);
-  }, [roomId]);
+  }, [allOk]);
 };

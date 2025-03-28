@@ -253,7 +253,7 @@ const Room = () => {
         )}
 
         {resultRef.current && aiUserRef.current && gameFinished && (
-          <p>
+          <p className={"font-press-start text-xs"}>
             Winner:{" "}
             {resultRef.current !== aiUserRef.current.user_id
               ? playersMap[resultRef.current].game_name

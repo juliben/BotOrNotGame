@@ -63,7 +63,7 @@ const TestScreen = ({}) => {
         navigate(`/room/${roomId}`, {
           state: { playersMap: playersMapRef.current, userId: userId },
         });
-      }, 10000);
+      }, 1000);
       return () => clearTimeout(timeout);
     }
   }, [readyToGo]);
@@ -77,7 +77,7 @@ const TestScreen = ({}) => {
           {!readyToGo && playersMap ? (
             <ReadyCountDisplay readyCount={Object.keys(playersMap).length} />
           ) : (
-            playersMap && <p>Ready to start...</p>
+            playersMap && <p>Starting now...</p>
           )}
         </div>
         <ul className={"flex flex-row gap-5 "}>

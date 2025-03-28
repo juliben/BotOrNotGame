@@ -8,7 +8,7 @@ import { PlayerNames } from "./../components/PlayerNames.tsx";
 import { VotingModal } from "./../components/VotingModal.tsx";
 import { AnimationStep1 } from "./../components/AnimationStep1.tsx";
 import { AnimationStep2 } from "./../components/AnimationStep2.tsx";
-import { ExitButton } from "@/components/ExitButton.tsx";
+import { QuitButton } from "@/components/QuitButton.tsx";
 
 import {
   getUserId,
@@ -60,7 +60,6 @@ const Room = () => {
   const messages = useMessagesChannel(roomId);
   const votes = useVoteChannel(roomId);
   const resultRef = useRef<string | undefined>(null); // User id
-  const winnerRef = useRef<Partial<User> | "ALL_HUMANS_WIN" | null>(null); // Result of interpreting the vote results
 
   // Initial refetch just in case
   useEffect(() => {
@@ -142,22 +141,9 @@ const Room = () => {
         votes,
         aiUserId: aiUserRef.current.user_id,
       });
-      interpretResult();
       setWinnerScreenVisible(true);
     }
   }, [votes]);
-
-  const interpretResult = () => {
-    if (!resultRef.current || !aiUserRef.current) return;
-    if (resultRef.current === aiUserRef.current.user_id) {
-      // AI gets caught out, humans win
-      winnerRef.current = "ALL_HUMANS_WIN";
-    }
-    if (resultRef.current !== aiUserRef.current.user_id) {
-      // A human is the winner
-      winnerRef.current = playersMap[resultRef.current];
-    }
-  };
 
   // Callback function for voting countdown
   // const startVotingCountdown = () => {
@@ -240,14 +226,12 @@ const Room = () => {
           blurScreen ? "blur-xs pointer-events-none" : ""
         }`}
       >
-        {onlyLeft && (
-          <ExitButton onClick={() => navigate("/")} children={"Exit"} />
-        )}
+        {onlyLeft && <QuitButton onClick={() => navigate("/")} />}
         <button
           className={
             "border-2 border-white/50 px-2 rounded-sm hover:bg-white/10"
           }
-          onClick={() => console.log(votes)}
+          onClick={() => setWinnerScreenVisible(true)}
         >
           Vote now (debug)
         </button>
@@ -306,16 +290,16 @@ const Room = () => {
         />
       )}
 
-      {winnerRef.current && winnerScreenVisible && !animationStep2 && (
+      {resultRef.current && winnerScreenVisible && !animationStep2 && (
         <AnimationStep1
-          winner={winnerRef.current}
+          result={playersMap[resultRef.current]}
           setWinnerScreenVisible={setWinnerScreenVisible}
           setAnimationStep2={setAnimationStep2}
         />
       )}
-      {winnerRef.current && winnerScreenVisible && animationStep2 && userId && (
+      {resultRef.current && winnerScreenVisible && animationStep2 && userId && (
         <AnimationStep2
-          winner={winnerRef.current}
+          result={playersMap[resultRef.current]}
           userId={userId}
           setWinnerScreenVisible={setWinnerScreenVisible}
         />

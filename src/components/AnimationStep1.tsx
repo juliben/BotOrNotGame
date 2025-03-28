@@ -2,13 +2,13 @@ import { motion } from "motion/react";
 import { User } from "types";
 
 interface Props {
-  winner: Partial<User> | "ALL_HUMANS_WIN";
+  result: Partial<User>;
   setWinnerScreenVisible: (visible: boolean) => void;
   setAnimationStep2: (visible: boolean) => void;
 }
 
 export const AnimationStep1 = ({
-  winner,
+  result,
   setWinnerScreenVisible,
   setAnimationStep2,
 }: Props) => {
@@ -71,7 +71,7 @@ export const AnimationStep1 = ({
             onAnimationComplete={() => {
               setAnimationStep2(true);
             }}
-            src={`/avatars/Cute-portraits_${winner.avatar}.png`}
+            src={`/avatars/Cute-portraits_${result.avatar}.png`}
             alt="Winner's avatar"
             className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
           />

@@ -5,7 +5,6 @@ import { generateRandomName } from "./generateRandomName";
 export const createAiPlayer = async (roomId) => {
   try {
     const name = generateRandomName();
-
     const randomNumber = Math.floor(Math.random() * 76) + 1;
     const number = String(randomNumber).padStart(2, "0");
 

@@ -4,7 +4,6 @@ export * from "./fetchPlayers";
 export * from "./finalVoteCount";
 export * from "./flipCoin";
 export * from "./getFirstMessageFromAi";
-export * from "./getFirstName";
 export * from "./getUserId";
 export * from "./ping";
 export * from "./processVotes";

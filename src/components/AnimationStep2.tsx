@@ -3,14 +3,13 @@ import { ReturnButton } from "./ui/ReturnButton";
 import { User } from "types";
 
 interface Props {
-  winner: Partial<User> | "ALL_HUMANS_WIN";
+  result: Partial<User>;
   userId: string;
   setWinnerScreenVisible: (visible: boolean) => void;
-  setAnimationStep2: (visible: boolean) => void;
 }
 
 export const AnimationStep2 = ({
-  winner,
+  result,
   userId,
   setWinnerScreenVisible,
 }: Props) => {
@@ -47,11 +46,11 @@ export const AnimationStep2 = ({
           className="flex items-center flex-col gap-4"
         >
           <motion.img
-            src={`/avatars/Cute-portraits_${winner.avatar}.png`}
+            src={`/avatars/Cute-portraits_${result.avatar}.png`}
             alt="Winner's avatar"
             className="w-16 h-16 rounded-full ring-4 shadow-md mt-3"
           />
-          <p className="text-xl">{winner.game_name}</p>
+          <p className="text-xl">{result.game_name}</p>
           <motion.p
             initial={{
               opacity: 0,
@@ -66,8 +65,8 @@ export const AnimationStep2 = ({
             }}
             className="text-red-400"
           >
-            {winner.is_ai && "AI DETECTED"}
-            {!winner.is_ai && "NOT AN AI"}
+            {result.is_ai && "AI DETECTED"}
+            {!result.is_ai && "NOT AN AI"}
           </motion.p>
         </motion.div>
         <motion.h1
@@ -85,11 +84,11 @@ export const AnimationStep2 = ({
           }}
           className="text-xl  text-center text-red-400"
         >
-          {winner.user_id === userId && "YOU WIN!"}
-          {winner.is_ai && "HUMANS WIN!"}
-          {!winner.is_ai && "HUMANS LOSE!"}
+          {result.user_id === userId && "YOU WIN!"}
+          {result.is_ai && "HUMANS WIN!"}
+          {!result.is_ai && "HUMANS LOSE!"}
         </motion.h1>
-        <ReturnButton onClick={() => setWinnerScreenVisible(false)} />
+        <ReturnButton onClick={() => console.log(result)} />
       </div>
     </div>
   );

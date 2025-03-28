@@ -171,3 +171,9 @@
     @apply flex-1 flex flex-col overflow-y-scroll bg-[#2c2971] my-3 rounded-lg border max-h-dvh gap-2;
   }
 }
+
+@layer utilities {
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+}

@@ -9,8 +9,12 @@ const Homepage = () => {
   const navigate = useNavigate();
   const onlinePlayers = useFetchOnline();
 
+  const handleNavigate = (privateRoom: boolean) => {
+    navigate("/choose-name", { state: { privateRoom: privateRoom } });
+  };
+
   return (
-    <motion.div className="flex flex-1 flex-col px-4 justify-center items-center gap-7 pt-20 font-jersey text-2xl text-center">
+    <motion.div className="flex-center flex-1 flex-col px-4 gap-7 pt-20 font-jersey text-2xl text-center">
       <OnlineCount onlinePlayers={onlinePlayers} />
       <div
         className={
@@ -30,18 +34,18 @@ const Homepage = () => {
         <Button
           variant="default"
           className="w-fit"
-          onClick={() => navigate("/choose-name")}
+          onClick={() => handleNavigate(false)}
         >
-          <p className={"text-2xl"}>PLAY WITH FRIENDS</p>
+          <p className={"text-2xl"}>PLAY WITH STRANGERS</p>
         </Button>
       </motion.div>
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Button
           variant="default"
           className="w-fit"
-          onClick={() => navigate("/choose-name")}
+          onClick={() => handleNavigate(true)}
         >
-          <p className={"text-2xl"}> PLAY WITH STRANGERS</p>
+          <p className={"text-2xl"}> PLAY WITH FRIENDS</p>
         </Button>
       </motion.div>
       {/* <Button

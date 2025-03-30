@@ -1,29 +1,38 @@
 import { useState, useEffect } from "react";
-import supabase from "@/api/supabase";
-import { queryRooms } from "../queryRooms";
+import {
+  queryRooms,
+  createPrivateRoom,
+  updateCurrentPlayerRoom,
+} from "../../services/";
 
-export const useQueryRooms = (userId?: string) => {
-  const [roomId, setRoomId] = useState<string | null>(null);
+interface Props {
+  userId: string | undefined;
+  privateRoom: boolean;
+}
+
+export const useQueryRooms = ({ userId, privateRoom }: Props) => {
+  const [roomId, setRoomId] = useState<string | undefined>(undefined);
+
   useEffect(() => {
-    if (!userId) {
-      return;
-    }
-    const initalRoomQuery = async () => {
-      const roomId = await queryRooms(userId);
+    if (!userId || roomId) return;
 
-      // Update room_id of current player
-      const { error } = await supabase
-        .from("players")
-        .update({ room_id: roomId })
-        .eq("user_id", userId);
-      if (error) {
-        console.log("Error updating player:", error);
+    const fetchOrCreateRoom = async () => {
+      let fetchedRoomId;
+
+      if (privateRoom) {
+        fetchedRoomId = await createPrivateRoom(userId);
+      } else {
+        fetchedRoomId = await queryRooms(userId);
       }
-      setRoomId(roomId);
+
+      if (fetchedRoomId) {
+        setRoomId(fetchedRoomId);
+        await updateCurrentPlayerRoom({ roomId: fetchedRoomId, userId });
+      }
     };
 
-    initalRoomQuery();
-  }, [userId]);
+    fetchOrCreateRoom();
+  }, [userId, roomId]);
 
   return roomId;
 };

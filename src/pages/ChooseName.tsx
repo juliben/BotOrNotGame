@@ -1,6 +1,6 @@
 import supabase from "../api/supabase";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { signInAnonymously } from "@/api/supabaseAuth";
 
 import { Gradient, Input, Checkbox, Card } from "./../components/ui";
@@ -13,6 +13,7 @@ const ChooseName = () => {
   const [ready, setReady] = useState(false);
   const { avatarUrl, randomAvatarNumber, roll } = useAvatar();
   const { name, getName, setName } = useGetName();
+  const privateRoom = useLocation().state?.privateRoom || false;
 
   // When ready, sign in as anon and update table with data
   const handleReady = async () => {
@@ -33,7 +34,7 @@ const ChooseName = () => {
       console.log("Error updating player:", error);
     }
 
-    navigate("/lobby/" + userId);
+    navigate("/lobby/" + userId, { state: { privateRoom: privateRoom } });
   };
 
   return (

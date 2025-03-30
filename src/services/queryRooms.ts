@@ -1,10 +1,12 @@
 import supabase from "@/api/supabase";
-import { createAiPlayer } from "./createAiPlayer";
+import addAiToRoom from "./addAiToRoom";
 
 export const queryRooms = async (userId: string) => {
+  // Join a room
   const { data: rooms, error } = await supabase
     .from("rooms")
-    .select("id, players, created_at")
+    .select("room_id, players, created_at")
+    .eq("is_private", false)
     .eq("status", "waiting")
     .order("created_at", { ascending: true }) // join oldest room
     .limit(1);
@@ -17,7 +19,7 @@ export const queryRooms = async (userId: string) => {
   let roomId;
 
   if (rooms.length > 0) {
-    roomId = rooms[0].id;
+    roomId = rooms[0].room_id;
 
     const updatedPlayers = rooms[0].players.includes(userId)
       ? rooms[0].players
@@ -27,7 +29,7 @@ export const queryRooms = async (userId: string) => {
     await supabase
       .from("rooms")
       .update({ players: updatedPlayers })
-      .eq("id", roomId);
+      .eq("room_id", roomId);
 
     console.log("Joined room:", roomId);
 
@@ -36,7 +38,7 @@ export const queryRooms = async (userId: string) => {
       const { error: updateFullError } = await supabase
         .from("rooms")
         .update({ status: "full" })
-        .eq("id", roomId);
+        .eq("room_id", roomId);
 
       if (updateFullError) {
         console.log("Error updating room status:", updateFullError);
@@ -44,51 +46,25 @@ export const queryRooms = async (userId: string) => {
       }
     }
   } else {
+    // Create new room
     const { data: newRoom, error } = await supabase
       .from("rooms")
       .insert({
         status: "waiting",
         players: [userId],
+        is_private: false,
       })
-      .select("id")
+      .select("room_id")
       .single();
 
     if (error) {
       console.log("Error creating room:", error);
       return;
     }
-    roomId = newRoom.id;
+    roomId = newRoom.room_id;
     console.log("Created room:", roomId);
 
-    // Create AI player
-    // This returns the AI user id, so it can be added to the 'rooms' table
-    const aiUser = await createAiPlayer(roomId);
-
-    console.log("aiUser:", aiUser);
-    // Add AI to rooms table
-    const { data: roomPlayers, error: roomPlayersError } = await supabase
-      .from("rooms")
-      .select("players")
-      .eq("id", roomId)
-      .single();
-
-    if (roomPlayersError) {
-      console.log("Error fetching room players:", roomPlayersError);
-      return;
-    }
-    console.log("Room players:", roomPlayers);
-
-    const { error: addAiError } = await supabase
-      .from("rooms")
-      .update({ players: [...roomPlayers.players, aiUser.user_id] })
-      .eq("id", roomId);
-
-    if (addAiError) {
-      console.log("Error adding AI to room:", addAiError);
-      return;
-    }
-
-    console.log("Added AI to room:", roomId);
+    await addAiToRoom(roomId);
   }
 
   return roomId;

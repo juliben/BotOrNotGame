@@ -14,3 +14,6 @@ export * from "./getLeaderId";
 export * from "./sendMyVoteAsMessage";
 export * from "./avatarRandomizer";
 export * from "./generateRandomName";
+export * from "./createPrivateRoom";
+export * from "./updateCurrentPlayerRoom";
+export * from "./addAiToRoom";

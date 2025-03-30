@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 import {
   useFetchPlayersMap,
@@ -20,7 +20,8 @@ const TestScreen = ({}) => {
   const [isRevealed, setIsRevealed] = useState(false);
 
   useStartPinging(userId);
-  const roomId = useQueryRooms(userId);
+  const privateRoom = useLocation().state?.privateRoom || false;
+  const roomId = useQueryRooms({ userId, privateRoom });
   const { playersMap, setPlayersMap } = useFetchPlayersMap(roomId);
   const playersMapRef = useRef(playersMap);
 
@@ -72,7 +73,7 @@ const TestScreen = ({}) => {
     <div className="container">
       <Gradient />
       <Card>
-        <p>Joined room: {roomId}</p>
+        <p>Private room? {privateRoom.toString()}</p>
         <div className={"flex flex-row"}>
           {!readyToGo && playersMap ? (
             <ReadyCountDisplay readyCount={Object.keys(playersMap).length} />
@@ -85,6 +86,12 @@ const TestScreen = ({}) => {
             userId &&
             PlayersRow({ playersMap, userId, isRevealed })}
         </ul>
+        {privateRoom && roomId && <p>Share this URL with 2 friends: </p>}
+        {privateRoom && roomId && (
+          <p className={"bg-gray text-black rounded-lg "}>
+            botornot.com/lobby/{roomId}
+          </p>
+        )}
       </Card>
     </div>
   );

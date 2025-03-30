@@ -23,7 +23,6 @@ export const useMainCountdown = () => {
           if (prev <= 0) {
             clearInterval(counter);
             setIsVoting(true);
-
             return 0;
           }
           return prev - 1;

@@ -29,7 +29,6 @@ import {
 } from "@/services/hooks/";
 import { useGetAiUser } from "@/services/hooks/useGetAiUser.ts";
 import OnlyLeftModal from "@/components/OnlyLeftModal.tsx";
-import { get } from "lodash";
 import { DisconnectedModal } from "@/components/DisconnectedModal.tsx";
 
 const Room = () => {

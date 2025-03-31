@@ -6,7 +6,9 @@ export const useGetName = () => {
 
   const getName = () => {
     const randomName = generateRandomName();
-    setName(randomName);
+    if (randomName) {
+      setName(randomName);
+    }
     return randomName;
   };
 

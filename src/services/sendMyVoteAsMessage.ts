@@ -22,9 +22,9 @@ export const sendMyVoteAsMessage = async ({
   try {
     const { error } = await supabase.from("messages").insert({
       sender_id: userId,
-      content: `${myUser.game_name} voted for ${votedUser.game_name}`,
+      content: `${myUser?.game_name} voted for ${votedUser?.game_name}`,
       room_id: roomId,
-      avatar: myUser.avatar,
+      avatar: myUser?.avatar,
       is_vote: true,
     });
     if (error) {

@@ -19,11 +19,11 @@ export const queryRooms = async (userId: string) => {
   let roomId;
 
   if (rooms.length > 0) {
-    roomId = rooms[0].room_id;
+    roomId = rooms[0]?.room_id;
 
-    const updatedPlayers = rooms[0].players.includes(userId)
+    const updatedPlayers = rooms[0]?.players.includes(userId)
       ? rooms[0].players
-      : [...rooms[0].players, userId];
+      : [...rooms[0]?.players, userId];
 
     // Add player to 'players' column in 'rooms' table
     await supabase

@@ -7,7 +7,6 @@ import {
 import Homepage from "./pages/Homepage";
 // import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
-import LanguageProvider from "./context/LanguageContext";
 import ChooseName from "./pages/ChooseName";
 import { AnimatePresence } from "motion/react";
 import TestScreen from "./pages/Lobby";
@@ -30,11 +29,9 @@ const AnimatedRoutes = () => {
 const App = () => {
   return (
     <>
-      <LanguageProvider>
-        <Router>
-          <AnimatedRoutes />
-        </Router>
-      </LanguageProvider>
+      <Router>
+        <AnimatedRoutes />
+      </Router>
     </>
   );
 };

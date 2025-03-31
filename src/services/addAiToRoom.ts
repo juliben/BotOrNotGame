@@ -22,7 +22,7 @@ export const addAiToRoom = async (roomId: string) => {
 
   const { error: addAiError } = await supabase
     .from("rooms")
-    .update({ players: [...roomPlayers.players, aiUser.user_id] })
+    .update({ players: [...roomPlayers.players, aiUser?.user_id] })
     .eq("room_id", roomId);
 
   if (addAiError) {

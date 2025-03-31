@@ -2,7 +2,7 @@ import supabase from "../api/supabase";
 import { generateRandomName } from "./generateRandomName";
 
 // Create AI player in the player's table (number comes later)
-export const createAiPlayer = async (roomId) => {
+export const createAiPlayer = async (roomId: string) => {
   try {
     const name = generateRandomName();
     const randomNumber = Math.floor(Math.random() * 76) + 1;

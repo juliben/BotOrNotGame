@@ -29,9 +29,9 @@ export const PlayerVotingCard = ({ setSelection, player }: Props) => {
       }}
     >
       <Button
-        onClick={() => setSelection(player.user_id)}
+        onClick={() => setSelection(player.user_id ?? "")}
         className={`flex ${
-          bubble[player.number]
+          bubble[(player.number as 1 | 2 | 3 | 4) ?? 1]
         } items-center justify-center rounded-lg w-auto h-auto shadow-xl mx-2 mb-2  `}
       >
         <div className="flex flex-col items-center justify-center gap-2">

@@ -26,7 +26,7 @@ export const assignNumbersToPlayers = async (roomId: string) => {
   // 2. Shuffle the array using the Fisher-Yates algorithm
   for (let i = numbers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+    [numbers[i], numbers[j]] = [numbers[j], numbers[i]] as [number, number];
   }
 
   const { data, error } = await supabase

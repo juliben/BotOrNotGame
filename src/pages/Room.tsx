@@ -3,12 +3,16 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import supabase from "../api/supabase";
 import { Button, Input } from "@/components/ui";
 
-import { Messages } from "./../components/Messages.tsx";
-import { PlayerNames } from "./../components/PlayerNames.tsx";
-import { VotingModal } from "./../components/VotingModal.tsx";
-import { AnimationStep1 } from "./../components/AnimationStep1.tsx";
-import { AnimationStep2 } from "./../components/AnimationStep2.tsx";
-import { QuitButton } from "@/components/QuitButton.tsx";
+import {
+  Messages,
+  PlayerNames,
+  VotingModal,
+  AnimationStep1,
+  AnimationStep2,
+  QuitButton,
+  DisconnectedModal,
+  OnlyLeftModal,
+} from "./../components/";
 
 import {
   getUserId,
@@ -18,7 +22,7 @@ import {
   getAiVote,
 } from "../services/";
 
-import { User } from "../../types.ts";
+import { User } from "../../types";
 import {
   useFirstMessageFromAi,
   useMainCountdown,
@@ -27,9 +31,10 @@ import {
   useStartPinging,
   useVoteChannel,
 } from "@/services/hooks/";
-import { useGetAiUser } from "@/services/hooks/useGetAiUser.ts";
-import OnlyLeftModal from "@/components/OnlyLeftModal.tsx";
-import { DisconnectedModal } from "@/components/DisconnectedModal.tsx";
+import { useGetAiUser } from "@/services/hooks/useGetAiUser";
+
+import { sendGameOverMessage } from "@/services/sendGameOverMessage";
+import { useAllPlayersHaveNumbers } from "@/services/hooks/useAllPlayersHaveNumbers";
 
 const Room = () => {
   const navigate = useNavigate();
@@ -62,7 +67,11 @@ const Room = () => {
   //
   const messages = useMessagesChannel(roomId);
   const votes = useVoteChannel(roomId);
-  const resultRef = useRef<string | undefined>(null); // User id
+  const resultRef = useRef<string | undefined>(undefined); // User id
+  const result = resultRef.current ? playersMap[resultRef.current] : null;
+
+  // Sometimes not all numbers are fetched correctly from useLocation. This will refetch. I need this because I can't use playersMap in the Messages component (I need to use playersMapRef so it will keep the disconnected players' data).
+  useAllPlayersHaveNumbers({ playersMap, playersMapRef });
 
   // Initial & re-refetch just in case
   useEffect(() => {
@@ -87,7 +96,7 @@ const Room = () => {
     if (!messages || messages.length === 0) return;
     const lastMessage = messages[messages.length - 1];
 
-    if (lastMessage.is_from_server) {
+    if (lastMessage && lastMessage.is_from_server) {
       // Someone disconnected
       fetchPlayers(roomId).then((playersMap) => {
         if (playersMap) {
@@ -97,7 +106,7 @@ const Room = () => {
     }
   }, [messages]);
 
-  const leaderIdRef = useRef<string | null>(null);
+  const leaderIdRef = useRef<string | null | undefined>(null);
   // Get a new? leader when playersMap changes (someone disconnects)
   useEffect(() => {
     if (!playersMap || Object.keys(playersMap).length === 0) return;
@@ -151,6 +160,15 @@ const Room = () => {
         aiUserId: aiUserRef.current.user_id,
       });
       setWinnerScreenVisible(true);
+      if (isLeader && roomId && resultRef.current) {
+        const result = playersMap[resultRef.current];
+        if (result) {
+          sendGameOverMessage({
+            result,
+            roomId,
+          });
+        }
+      }
     }
   }, [votes]);
 
@@ -186,20 +204,22 @@ const Room = () => {
 
     const myUser = playersMap[userId];
 
-    try {
-      const { error } = await supabase.from("messages").insert({
-        sender_id: userId,
-        room_id: roomId,
-        content: input,
-        game_name: myUser.game_name,
-        avatar: myUser.avatar,
-      });
-      if (error) {
-        console.log("Error sending message to Supabase:", error);
+    if (myUser) {
+      try {
+        const { error } = await supabase.from("messages").insert({
+          sender_id: userId,
+          room_id: roomId,
+          content: input,
+          game_name: myUser.game_name,
+          avatar: myUser.avatar,
+        });
+        if (error) {
+          console.log("Error sending message to Supabase:", error);
+        }
+        setInput("");
+      } catch (error) {
+        console.log("Error sending message:", error);
       }
-      setInput("");
-    } catch (error) {
-      console.log("Error sending message:", error);
     }
   };
 
@@ -255,7 +275,7 @@ const Room = () => {
           <p className={"font-press-start text-xs"}>
             Winner:{" "}
             {resultRef.current !== aiUserRef.current.user_id
-              ? playersMap[resultRef.current].game_name
+              ? playersMap[resultRef.current]?.game_name
               : "Humans"}
           </p>
         )}
@@ -270,6 +290,7 @@ const Room = () => {
         {playersMap && <PlayerNames playersMap={playersMap} />}
         {playersMap && userId && (
           <>
+            {/* Need to send playersMapRef.current (and not playersMap) otherwise if someone disconnects, it will crash */}
             <Messages
               messages={messages ?? []}
               playersMap={playersMapRef.current}
@@ -305,26 +326,26 @@ const Room = () => {
         />
       )}
 
-      {showDisconnected && <DisconnectedModal dismiss={handleDismiss} />}
+      {showDisconnected && <DisconnectedModal />}
 
       {showOnlyLeft && allOk && <OnlyLeftModal dismiss={handleDismiss} />}
 
-      {resultRef.current && winnerScreenVisible && !animationStep2 && (
+      {winnerScreenVisible && !animationStep2 && result && (
         <AnimationStep1
-          result={playersMap[resultRef.current]}
+          result={result}
           setWinnerScreenVisible={setWinnerScreenVisible}
           setAnimationStep2={setAnimationStep2}
         />
       )}
-      {resultRef.current && winnerScreenVisible && animationStep2 && userId && (
+
+      {winnerScreenVisible && animationStep2 && userId && result && (
         <AnimationStep2
-          result={playersMap[resultRef.current]}
+          result={result}
           userId={userId}
           dismiss={handleDismiss}
           setGameFinished={setGameFinished}
         />
       )}
-      <button onClick={() => setIsVoting(true)}>Debug</button>
     </div>
   );
 };

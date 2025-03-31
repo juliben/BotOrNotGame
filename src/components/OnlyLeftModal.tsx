@@ -7,7 +7,7 @@ interface Props {
   dismiss: () => void;
 }
 
-const OnlyLeftModal = ({ dismiss }: Props) => {
+export const OnlyLeftModal = ({ dismiss }: Props) => {
   const navigate = useNavigate();
   return (
     <div className="fixed inset-0 flex-center font-press-start text-x bg-black/35">
@@ -54,5 +54,3 @@ const OnlyLeftModal = ({ dismiss }: Props) => {
     </div>
   );
 };
-
-export default OnlyLeftModal;

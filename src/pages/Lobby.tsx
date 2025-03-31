@@ -9,9 +9,9 @@ import {
 } from "@/services/hooks/";
 
 import { Card, Gradient } from "./../components/ui/";
-import { ReadyCountDisplay } from "./../components/ReadyCountDisplay";
-import { PlayersRow } from "@/components/PlayersRow";
-import { fetchPlayers, assignNumbersToPlayers } from "@/services";
+import { ReadyCountDisplay, PlayersRow, LinkRow } from "./../components/";
+
+import { fetchPlayers, assignNumbersToPlayers } from "../services";
 
 const TestScreen = ({}) => {
   const navigate = useNavigate();
@@ -73,7 +73,6 @@ const TestScreen = ({}) => {
     <div className="container">
       <Gradient />
       <Card>
-        <p>Private room? {privateRoom.toString()}</p>
         <div className={"flex flex-row"}>
           {!readyToGo && playersMap ? (
             <ReadyCountDisplay readyCount={Object.keys(playersMap).length} />
@@ -87,11 +86,7 @@ const TestScreen = ({}) => {
             PlayersRow({ playersMap, userId, isRevealed })}
         </ul>
         {privateRoom && roomId && <p>Share this URL with 2 friends: </p>}
-        {privateRoom && roomId && (
-          <p className={"bg-gray text-black rounded-lg "}>
-            botornot.com/lobby/{roomId}
-          </p>
-        )}
+        {privateRoom && roomId && <LinkRow roomId={roomId} />}
       </Card>
     </div>
   );

@@ -10,6 +10,6 @@ export const getUserId = async () => {
       return data.user.id;
     }
   } catch {
-    console.error("Error getting user ID:", error);
+    console.error("Error getting user ID:", Error);
   }
 };

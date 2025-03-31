@@ -16,9 +16,9 @@ export const VotingModal = ({
   aiUserId,
   handleVote,
 }: Props) => {
-  const [countdown, setCountdown] = useState(4);
-  const [selection, setSelection] = useState<string | null>(null);
-  const randomIdRef = useRef<string | null>(null);
+  const [countdown, setCountdown] = useState(15);
+  const [selection, setSelection] = useState<string | null | undefined>(null);
+  const randomIdRef = useRef<string | null | undefined>(null);
 
   // It doesn't matter if someone disconnects during voting time - the randomId to vote for is defined here at first render
   // (Anyway it wouldn't matter because offline time to trigger disconnection is longer than voting time, but just in case)

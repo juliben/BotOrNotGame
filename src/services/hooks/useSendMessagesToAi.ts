@@ -24,14 +24,14 @@ export const useSendMessagesToAi = ({
 
     if (
       messages.length === 0 ||
-      (messages.length === 1 && messages[0].is_from_ai === true)
+      (messages.length === 1 && messages[0]?.is_from_ai === true)
     ) {
       return;
     }
 
     if (
       messages.length > 1 &&
-      messages[messages.length - 1].is_from_ai === true
+      messages[messages.length - 1]?.is_from_ai === true
     ) {
       console.log("Last message was from AI");
       return;

@@ -1,8 +1,7 @@
 
 .env
 
-src/api/openai.ts
-src/api/supabase.ts
+
 
 # Logs
 logs

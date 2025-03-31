@@ -1,14 +1,16 @@
 import supabase from "../api/supabase";
 import axios from "axios";
 import { flipCoin } from "./flipCoin";
-import { User } from "../../types.ts";
+import { User } from "../../types";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-export const getFirstMessageFromAi = async (roomId: string, aiUser: User) => {
+export const getFirstMessageFromAi = async (
+  roomId: string | undefined,
+  aiUser: User
+) => {
   try {
     console.log("Getting first message from AI");
-    const response = await axios.get(
-      "http://localhost:3000/first-message-spanish"
-    );
+    const response = await axios.get(`${backendUrl}/first-message`);
     console.log("Response from AI:", response.data);
 
     // / Split the response into sentences to appear more human
@@ -16,7 +18,7 @@ export const getFirstMessageFromAi = async (roomId: string, aiUser: User) => {
 
     console.log("Initial sentences:", initialSentences);
 
-    let sentences = initialSentences.flatMap((sentence) => {
+    let sentences = initialSentences.flatMap((sentence: string) => {
       // More casual spelling
       sentence = sentence
         .trim()
@@ -44,7 +46,8 @@ export const getFirstMessageFromAi = async (roomId: string, aiUser: User) => {
         `Waiting ${sentenceDelay}ms before sending sentence: "${sentence}"`
       );
 
-      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const delay = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
       // // Wait for the delay.
       await delay(sentenceDelay);
 

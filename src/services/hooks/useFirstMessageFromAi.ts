@@ -26,11 +26,11 @@ export const useFirstMessageFromAi = ({
       return;
     }
     if (!flipCoin()) {
-      console.log("Skipping first message from AI");
       setExecuted(true);
+      console.log("Skipping first message from AI");
       return;
     }
-    getFirstMessageFromAi(roomId, aiUserRef.current);
     setExecuted(true);
+    getFirstMessageFromAi(roomId, aiUserRef.current);
   }, [allOk, isLeader]);
 };

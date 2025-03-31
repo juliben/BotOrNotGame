@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { User } from "types";
 
 interface Props {
   playersMap: Record<string, Partial<User>>;
@@ -9,7 +10,7 @@ export const useGetAiUser = ({ playersMap, aiUserRef }: Props) => {
   useEffect(() => {
     const getAiUser = () => {
       const aiUserKey = Object.keys(playersMap).find(
-        (key) => playersMap[key].is_ai === true
+        (key) => playersMap[key]?.is_ai === true
       );
       return aiUserKey ? playersMap[aiUserKey] : null;
     };

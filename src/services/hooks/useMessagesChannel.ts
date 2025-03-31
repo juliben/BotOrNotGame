@@ -34,6 +34,7 @@ export const useMessagesChannel = (roomId: string | undefined) => {
             is_from_ai: payload.new.is_from_ai,
             is_from_server: payload.new.is_from_server,
             avatar: payload.new.avatar,
+            is_game_over: payload.new.is_game_over,
           };
           console.log("Received payload message: " + newMessage.content);
           setMessages((messages) => [...messages, newMessage]);

@@ -31,10 +31,10 @@ export const Messages = ({ messages, playersMap, userId }: Props) => {
   return (
     <>
       {messages.map((msg, index) => {
-        const sender = playersMap[msg.sender_id];
+        const sender = playersMap[msg.sender_id ?? ""];
         const isLastMessage =
           index === messages.length - 1 ||
-          messages[index + 1].sender_id !== msg.sender_id;
+          messages[index + 1]?.sender_id !== msg.sender_id;
         const isMine = msg.sender_id === userId;
 
         if (!msg.is_from_server && !msg.is_vote) {
@@ -47,15 +47,23 @@ export const Messages = ({ messages, playersMap, userId }: Props) => {
             >
               {isLastMessage ? (
                 <img
-                  src={`/avatars/Cute-portraits_${sender.avatar}.png`}
+                  src={`/avatars/Cute-portraits_${sender?.avatar}.png`}
                   className="rounded-full h-7 w-7 mx-2 mb-0.5"
                 />
               ) : (
                 <div className="h-7 w-7 mx-2 mb-0.5" />
               )}
-              <div className={`${bubbleStyles[sender.number]}`}>
-                <div className={`${nameStyles[sender.number]}`}>
-                  ~{sender.game_name}
+              <div
+                className={`${
+                  bubbleStyles[(sender?.number as 1 | 2 | 3 | 4) ?? 1]
+                }`}
+              >
+                <div
+                  className={`${
+                    nameStyles[(sender?.number as 1 | 2 | 3 | 4) ?? 1]
+                  }`}
+                >
+                  ~{sender?.game_name}
                 </div>
                 <div>{msg.content}</div>
               </div>
@@ -67,20 +75,30 @@ export const Messages = ({ messages, playersMap, userId }: Props) => {
           return (
             <div
               key={index}
-              className={`${voteStyle[sender.number]} ${
-                isMine ? "self-end mr-4" : "self-start ml-4"
-              }`}
+              className={`${
+                voteStyle[(sender?.number as 1 | 2 | 3 | 4) ?? 1]
+              } ${isMine ? "self-end mr-4" : "self-start ml-4"}`}
             >
               {msg.content}
             </div>
           );
         }
 
-        if (msg.is_from_server) {
+        if (msg.is_from_server && !msg.is_game_over) {
           return (
             <div
               key={index}
               className="bg-gray-500 rounded-lg w-fit h-fit px-3 py-1 self-center my-0.5"
+            >
+              {msg.content}
+            </div>
+          );
+        }
+        if (msg.is_game_over) {
+          return (
+            <div
+              key={index}
+              className="bg-[#ff007f] rounded-lg w-fit h-fit px-3 py-1 self-center my-0.5"
             >
               {msg.content}
             </div>

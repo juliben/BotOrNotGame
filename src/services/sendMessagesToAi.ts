@@ -2,20 +2,28 @@ import supabase from "../api/supabase";
 import axios from "axios";
 import { flipCoin } from "./flipCoin";
 import { Message } from "types";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 // Utility function to return a promise that resolves after a given delay.
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Send request to API, then process the response, and insert into Supabase
 export const sendMessagesToAi = async (
   roomId: string | undefined,
-  messages: Message[],
+  messages: Partial<Message>[],
   aiUser: any
 ) => {
   try {
-    const response = await axios.post("http://localhost:3000/spanish", {
-      messages,
-    });
+    console.log("Sending messages to AI");
+    const response = await axios.post(
+      backendUrl,
+      {
+        messages,
+      },
+      {
+        withCredentials: true,
+      }
+    );
 
     const isAppropriate =
       response.data.shouldRespond === true && response.data.confidence >= 0.7;
@@ -27,7 +35,7 @@ export const sendMessagesToAi = async (
     /// Split the response into sentences to appear more human
     let initialSentences = response.data.response.split(/(?<=[.?!"])\s+/);
 
-    let sentences = initialSentences.flatMap((sentence) => {
+    let sentences = initialSentences.flatMap((sentence: string) => {
       // More casual spelling
       sentence = sentence
         .trim()
@@ -69,7 +77,7 @@ export const sendMessagesToAi = async (
         console.log("Error sending sentence to Supabase:", error);
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     if (error.status === 429) {
       console.log("Another AI request in progress.");
     }

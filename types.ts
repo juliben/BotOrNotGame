@@ -19,4 +19,5 @@ export type Message = {
   is_from_ai: boolean;
   is_vote: boolean;
   is_from_server: boolean;
+  is_game_over: boolean;
 };

@@ -1,13 +1,28 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
+      "@/api/*": ["src/api/*"],
+      "@/components/*": ["src/components/*"],
+      "@/context/*": ["src/context/*"],
+      "@/services/*": ["src/services/*"],
+      "@/lib/*": ["src/lib/*"],
+      "types": ["./types.ts"]
+    },
+    "target": "ESNext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "jsx": "preserve",
+    "types": ["react", "react-dom", "node"],
+    "noEmit": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src",
+    "node_modules/react-icons/**/*.d.ts",
+    "node_modules/@types/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
 }

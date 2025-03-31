@@ -1,4 +1,4 @@
-import { User } from "../../types.ts";
+import { User } from "../../types";
 
 type Props = {
   playersMap: Record<string, Partial<User>>;
@@ -15,7 +15,10 @@ export const PlayerNames = ({ playersMap }: Props) => {
   return (
     <p className="m-2 p-2  border-black border border-dotted rounded-lg text-foreground">
       {Object.values(playersMap).map((player, index) => (
-        <span key={player.user_id} className={nameColors[player.number]}>
+        <span
+          key={player.user_id}
+          className={nameColors[(player.number as 1 | 2 | 3 | 4) ?? 1]}
+        >
           {player.game_name}
           {index === Object.keys(playersMap).length - 2 ? (
             <span className="text-foreground"> and</span>

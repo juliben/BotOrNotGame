@@ -15,21 +15,22 @@ export const useFirstMessageFromAi = ({
   roomId,
   aiUserRef,
 }: Props) => {
-  const [sentFirstMessage, setSentFirstMessage] = useState(false);
+  const [executed, setExecuted] = useState(false);
 
   useEffect(() => {
     if (!allOk || !isLeader) {
       return;
     }
-    if (sentFirstMessage) {
+    if (executed) {
       console.log("Already sent first message");
       return;
     }
     if (!flipCoin()) {
       console.log("Skipping first message from AI");
+      setExecuted(true);
       return;
     }
     getFirstMessageFromAi(roomId, aiUserRef.current);
-    setSentFirstMessage(true);
+    setExecuted(true);
   }, [allOk, isLeader]);
 };

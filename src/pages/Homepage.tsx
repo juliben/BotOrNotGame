@@ -1,10 +1,9 @@
-import { OnlineCount } from "./../components";
+import { NewGameButton, OnlineCount } from "./../components";
 import { useFetchOnline } from "@/services/hooks/";
 import { Button } from "@/components/ui/button";
 
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { sendMessagesToAi } from "../services";
 
 const Homepage = () => {
   const navigate = useNavigate();
@@ -31,15 +30,8 @@ const Homepage = () => {
       <p>If the AI is voted out, all humans win.</p>
       <p>If a human is voted out, that human alone wins.</p>
       <p>Your goal: convince others you're the AI.</p>
-      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Button
-          variant="default"
-          className="w-fit"
-          onClick={() => handleNavigate(false)}
-        >
-          <p className={"text-2xl"}>NEW GAME</p>
-        </Button>
-      </motion.div>
+
+      <NewGameButton onClick={() => handleNavigate(false)} />
 
       {/* <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Button
@@ -64,17 +56,13 @@ const Homepage = () => {
         ESPAÑOL
         <FaLongArrowAltRight />
       </Button> */}
-      <button onClick={handleDebug}>
-        <p className="text-sm mt-20">
-          Made by:{" "}
-          <Link
-            to={"https://github.com/juliben"}
-            className="text-ring underline"
-          >
-            juliben
-          </Link>
-        </p>
-      </button>
+
+      <p className="text-sm mt-20">
+        Made by:{" "}
+        <Link to={"https://github.com/juliben"} className="text-ring underline">
+          juliben
+        </Link>
+      </p>
     </motion.div>
   );
 };

@@ -12,3 +12,4 @@ export * from "./XButton";
 export * from "./DisconnectedModal";
 export * from "./LinkRow";
 export * from "./OnlyLeftModal";
+export * from "./NewGameButton";

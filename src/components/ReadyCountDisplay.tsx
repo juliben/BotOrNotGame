@@ -9,9 +9,9 @@ export const ReadyCountDisplay = ({ readyCount }: Props) => {
     <div>
       Waiting for players to join...{" "}
       <motion.div
-        className={"inline-block text-[var(--text-accent)] text-3xl"}
+        className={"inline-block text-[var(--text-accent)] text-3xl scale-110"}
         animate={{
-          rotate: [0, 1.2, -1.2, 0],
+          rotate: [0, 1.25, -1.25, 0],
         }}
         transition={{
           duration: 2,

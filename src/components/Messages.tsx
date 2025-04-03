@@ -98,7 +98,7 @@ export const Messages = ({ messages, playersMap, userId }: Props) => {
           return (
             <div
               key={index}
-              className="bg-[#ff007f] rounded-lg w-fit h-fit px-3 py-1 self-center my-0.5"
+              className="bg-[#ff007f] rounded-lg w-fit h-fit px-3 py-1 self-center my-0.5 mx-4"
             >
               {msg.content}
             </div>

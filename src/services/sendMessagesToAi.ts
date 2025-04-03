@@ -15,25 +15,46 @@ export const sendMessagesToAi = async (
 ) => {
   try {
     console.log("Sending messages to AI");
-    const response = await axios.post(
+
+    const response = await fetch(
       "https://silkyxpphpftgloncpls.functions.supabase.co/getAiMessageSpanish",
       {
-        messages,
-      },
-      {
-        withCredentials: true,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Required to indicate the body is JSON
+        },
+        body: JSON.stringify({ messages }),
       }
     );
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    let parsedJson;
+    if (typeof data.response === "string") {
+      try {
+        parsedJson = JSON.parse(data.response);
+      } catch (error) {
+        console.error("Error parsing JSON:", error);
+      }
+    } else {
+      parsedJson = data.response;
+    }
+    console.log("parsedJson:", parsedJson);
+
+    const message = parsedJson.response;
     const isAppropriate =
-      response.data.shouldRespond === true && response.data.confidence >= 0.7;
+      parsedJson.shouldRespond === true && parsedJson.confidence >= 0.7;
 
     if (!isAppropriate) {
       console.log("AI response is not appropriate, skipping...");
       return;
     }
-    /// Split the response into sentences to appear more human
-    let initialSentences = response.data.response.split(/(?<=[.?!"])\s+/);
+    const initialSentences = message.split(/(?<=[.?!"])\s+/);
+    console.log("Initial sentences:", initialSentences);
 
     let sentences = initialSentences.flatMap((sentence: string) => {
       // More casual spelling

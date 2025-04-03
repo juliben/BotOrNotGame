@@ -6,13 +6,21 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 // Utility function to return a promise that resolves after a given delay.
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+let requestInProgress = false;
 
 // Send request to API, then process the response, and insert into Supabase
+
 export const sendMessagesToAi = async (
   roomId: string | undefined,
   messages: Partial<Message>[],
   aiUser: any
 ) => {
+  if (requestInProgress) {
+    console.log("Request in progress, skipping...");
+    return;
+  }
+
+  requestInProgress = true;
   try {
     console.log("Sending messages to AI");
 
@@ -43,7 +51,6 @@ export const sendMessagesToAi = async (
     } else {
       parsedJson = data.response;
     }
-    console.log("parsedJson:", parsedJson);
 
     const message = parsedJson.response;
     const isAppropriate =
@@ -54,7 +61,6 @@ export const sendMessagesToAi = async (
       return;
     }
     const initialSentences = message.split(/(?<=[.?!"])\s+/);
-    console.log("Initial sentences:", initialSentences);
 
     let sentences = initialSentences.flatMap((sentence: string) => {
       // More casual spelling
@@ -103,5 +109,7 @@ export const sendMessagesToAi = async (
       console.log("Another AI request in progress.");
     }
     console.log("Error sending message to AI:", error);
+  } finally {
+    requestInProgress = false;
   }
 };

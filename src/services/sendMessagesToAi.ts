@@ -16,7 +16,7 @@ export const sendMessagesToAi = async (
   try {
     console.log("Sending messages to AI");
     const response = await axios.post(
-      backendUrl,
+      "https://silkyxpphpftgloncpls.functions.supabase.co/getAiMessageSpanish",
       {
         messages,
       },

@@ -10,7 +10,9 @@ export const getFirstMessageFromAi = async (
 ) => {
   try {
     console.log("Getting first message from AI");
-    const response = await axios.get(`${backendUrl}/first-message`);
+    const response = await axios.post(
+      "https://silkyxpphpftgloncpls.functions.supabase.co/getAiMessageSpanish"
+    );
     console.log("Response from AI:", response.data);
 
     // / Split the response into sentences to appear more human

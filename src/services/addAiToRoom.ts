@@ -1,9 +1,28 @@
 import { createAiPlayer } from "./createAiPlayer";
 import supabase from "../api/supabase";
 
+// This function is executed inside the queryRooms function
 // Create AI player & add him to 'rooms' table
 export const addAiToRoom = async (roomId: string) => {
-  // This returns the AI user id, so it can be added to the 'rooms' table
+  // Check if the AI is already in the room
+  const { data, error } = await supabase
+    .from("players")
+    .select("is_ai")
+    .eq("room_id", roomId)
+    .eq("is_ai", true)
+    .single();
+
+  if (error) {
+    console.log("Error fetching AI player:", error);
+    return;
+  }
+
+  if (data) {
+    console.log("AI player already exists");
+    return;
+  }
+
+  // This creates an AI player and returns their user_id, so it can be added to the 'rooms' table
   const aiUser = await createAiPlayer(roomId);
 
   console.log("aiUser:", aiUser);

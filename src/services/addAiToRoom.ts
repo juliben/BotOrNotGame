@@ -12,14 +12,16 @@ export const addAiToRoom = async (roomId: string) => {
     .eq("is_ai", true)
     .single();
 
-  if (error) {
-    console.log("Error fetching AI player:", error);
-    return;
-  }
-
   if (data) {
     console.log("AI player already exists");
     return;
+  }
+  if (error) {
+    if (error.code === "PGRST116") {
+      console.log("AI player does not exist");
+    } else {
+      console.log("Error fetching AI player:", error);
+    }
   }
 
   // This creates an AI player and returns their user_id, so it can be added to the 'rooms' table

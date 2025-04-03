@@ -1,26 +1,19 @@
+import { RefObject } from "react";
 import supabase from "../api/supabase";
-import axios from "axios";
 import { flipCoin } from "./flipCoin";
 import { Message } from "types";
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 // Utility function to return a promise that resolves after a given delay.
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-let requestInProgress = false;
 
 // Send request to API, then process the response, and insert into Supabase
 
 export const sendMessagesToAi = async (
   roomId: string | undefined,
   messages: Partial<Message>[],
-  aiUser: any
+  aiUser: any,
+  requestInProgress: RefObject<boolean>
 ) => {
-  if (requestInProgress) {
-    console.log("Request in progress, skipping...");
-    return;
-  }
-
-  requestInProgress = true;
   try {
     console.log("Sending messages to AI");
 
@@ -36,6 +29,7 @@ export const sendMessagesToAi = async (
     );
 
     if (!response.ok) {
+      requestInProgress.current = false;
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
@@ -58,6 +52,7 @@ export const sendMessagesToAi = async (
 
     if (!isAppropriate) {
       console.log("AI response is not appropriate, skipping...");
+      requestInProgress.current = false;
       return;
     }
     const initialSentences = message.split(/(?<=[.?!"])\s+/);
@@ -110,6 +105,6 @@ export const sendMessagesToAi = async (
     }
     console.log("Error sending message to AI:", error);
   } finally {
-    requestInProgress = false;
+    requestInProgress.current = false;
   }
 };

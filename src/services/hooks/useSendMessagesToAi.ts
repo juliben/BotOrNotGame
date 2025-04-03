@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { RefObject, useEffect, useRef } from "react";
 import { sendMessagesToAi } from "../sendMessagesToAi";
 import { Message } from "types";
 
@@ -17,8 +17,10 @@ export const useSendMessagesToAi = ({
   roomId,
   aiUserRef,
 }: Props) => {
+  const requestInProgress = useRef(false);
+
   useEffect(() => {
-    if (!allOk || !isLeader || !messages) {
+    if (!allOk || !isLeader || !messages || requestInProgress.current) {
       return;
     }
 
@@ -37,7 +39,7 @@ export const useSendMessagesToAi = ({
       return;
     }
 
-    console.log("Sending messages to AI");
+    requestInProgress.current = true;
     sendMessagesToAi(roomId, messages, aiUserRef.current);
   }, [messages]);
 };

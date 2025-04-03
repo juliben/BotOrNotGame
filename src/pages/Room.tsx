@@ -70,6 +70,8 @@ const Room = () => {
   const resultRef = useRef<string | undefined>(undefined); // User id
   const result = resultRef.current ? playersMap[resultRef.current] : null;
 
+  const requestInProgress = useRef(false);
+
   // Sometimes not all numbers are fetched correctly from useLocation. This will refetch. I need this because I can't use playersMap in the Messages component (I need to use playersMapRef so it will keep the disconnected players' data).
   useAllPlayersHaveNumbers({ playersMap, playersMapRef });
 

@@ -48,7 +48,7 @@ const Room = () => {
   const [winnerScreenVisible, setWinnerScreenVisible] = useState(false);
   const [animationStep2, setAnimationStep2] = useState(false);
   const blurScreen = isVoting || winnerScreenVisible || showOnlyLeft;
-  const [gameFinished, setGameFinished] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
   const [disconnected, setDisconnected] = useState(false);
   const [showDisconnected, setShowDisconnected] = useState(false);
 
@@ -264,7 +264,7 @@ const Room = () => {
           blurScreen ? "blur-xs pointer-events-none" : ""
         }`}
       >
-        {!onlyLeft && !gameFinished && !disconnected && (
+        {!onlyLeft && !gameOver && !disconnected && (
           <p
             className={`self-end  font-press-start text-xs py-2
           } ${countdown < 30 ? "text-red-400" : ""}`}
@@ -273,7 +273,7 @@ const Room = () => {
           </p>
         )}
 
-        {resultRef.current && aiUserRef.current && gameFinished && (
+        {resultRef.current && aiUserRef.current && gameOver && (
           <p className={"font-press-start text-xs"}>
             Winner:{" "}
             {resultRef.current !== aiUserRef.current.user_id
@@ -281,7 +281,7 @@ const Room = () => {
               : "Humans"}
           </p>
         )}
-        {onlyLeft || gameFinished || disconnected ? (
+        {onlyLeft || gameOver || disconnected ? (
           <QuitButton onClick={() => navigate("/")} />
         ) : null}
       </div>
@@ -297,6 +297,7 @@ const Room = () => {
               messages={messages ?? []}
               playersMap={playersMapRef.current}
               userId={userId}
+              gameOver={gameOver}
             />
             <div ref={messagesEndRef} />
           </>
@@ -345,7 +346,7 @@ const Room = () => {
           result={result}
           userId={userId}
           dismiss={handleDismiss}
-          setGameFinished={setGameFinished}
+          setGameOver={setGameOver}
         />
       )}
     </div>

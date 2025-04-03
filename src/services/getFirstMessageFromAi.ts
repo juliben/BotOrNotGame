@@ -2,7 +2,6 @@ import supabase from "../api/supabase";
 import axios from "axios";
 import { flipCoin } from "./flipCoin";
 import { User } from "../../types";
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 export const getFirstMessageFromAi = async (
   roomId: string | undefined,

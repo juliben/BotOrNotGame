@@ -56,7 +56,6 @@ const Homepage = () => {
         ESPAÑOL
         <FaLongArrowAltRight />
       </Button> */}
-
       <p className="text-sm mt-20">
         Made by:{" "}
         <Link to={"https://github.com/juliben"} className="text-ring underline">

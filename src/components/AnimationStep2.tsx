@@ -6,17 +6,17 @@ interface Props {
   result: Partial<User>;
   userId: string;
   dismiss: () => void;
-  setGameFinished: (finished: boolean) => void;
+  setGameOver: (finished: boolean) => void;
 }
 
 export const AnimationStep2 = ({
   result,
   userId,
   dismiss,
-  setGameFinished,
+  setGameOver,
 }: Props) => {
   const handlePress = () => {
-    setGameFinished(true);
+    setGameOver(true);
     dismiss();
   };
   return (

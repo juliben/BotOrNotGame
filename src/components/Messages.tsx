@@ -4,6 +4,7 @@ interface Props {
   messages: Partial<Message>[];
   playersMap: Record<string, Partial<User>>;
   userId: string;
+  gameOver: boolean;
 }
 
 const bubbleStyles = {
@@ -27,7 +28,7 @@ const nameStyles = {
   4: "text-[#e6b3e6] font-medium",
 };
 
-export const Messages = ({ messages, playersMap, userId }: Props) => {
+export const Messages = ({ messages, playersMap, userId, gameOver }: Props) => {
   return (
     <>
       {messages.map((msg, index) => {
@@ -47,7 +48,11 @@ export const Messages = ({ messages, playersMap, userId }: Props) => {
             >
               {isLastMessage ? (
                 <img
-                  src={`/avatars/Cute-portraits_${sender?.avatar}.png`}
+                  src={
+                    gameOver && msg.is_from_ai
+                      ? "/avatars/bot1.png"
+                      : `/avatars/Cute-portraits_${sender?.avatar}.png`
+                  }
                   className="rounded-full h-7 w-7 mx-2 mb-0.5"
                 />
               ) : (

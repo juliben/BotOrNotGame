@@ -11,7 +11,7 @@ export const getFirstMessageFromAi = async (
   try {
     console.log("Getting first message from AI");
     const response = await axios.post(
-      "https://silkyxpphpftgloncpls.functions.supabase.co/getAiMessageSpanish"
+      "https://silkyxpphpftgloncpls.supabase.co/functions/v1/firstMessageSpanish"
     );
     console.log("Response from AI:", response.data);
 

@@ -38,8 +38,8 @@ export const useSendMessagesToAi = ({
       console.log("Last message was from AI");
       return;
     }
-
+    //
     requestInProgress.current = true;
-    sendMessagesToAi(roomId, messages, aiUserRef.current);
+    sendMessagesToAi(roomId, messages, aiUserRef.current, requestInProgress);
   }, [messages]);
 };

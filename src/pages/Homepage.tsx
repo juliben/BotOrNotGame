@@ -14,39 +14,6 @@ const Homepage = () => {
     navigate("/choose-name", { state: { privateRoom: privateRoom } });
   };
 
-  const handleDebug = () => {
-    const messages = [
-      {
-        role: "user",
-        content: "¿A quien le gusta la polenta con salsa de tomate?",
-      },
-      { role: "user", content: "Se me pego una cancion japonesa kawaii" },
-    ];
-    const response = fetch(
-      "https://silkyxpphpftgloncpls.functions.supabase.co/getAiMessageSpanish",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json", // Required to indicate the body is JSON
-        },
-        body: JSON.stringify({ messages }),
-      }
-    )
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Response data from backend:", data);
-      })
-      .catch((error) => {
-        console.error("Error during fetch request:", error);
-      });
-    console.log(response);
-  };
-
   return (
     <motion.div className="flex-center flex-1 flex-col px-4 gap-7 pt-20 font-jersey text-2xl text-center">
       <OnlineCount onlinePlayers={onlinePlayers} />
@@ -73,15 +40,7 @@ const Homepage = () => {
           <p className={"text-2xl"}>NEW GAME</p>
         </Button>
       </motion.div>
-      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Button
-          variant="default"
-          className="w-fit"
-          onClick={() => handleDebug()}
-        >
-          <p className={"text-2xl"}>Debug</p>
-        </Button>
-      </motion.div>
+
       {/* <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Button
           variant="default"

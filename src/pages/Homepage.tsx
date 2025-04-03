@@ -1,6 +1,6 @@
 import { NewGameButton, OnlineCount } from "./../components";
 import { useFetchOnline } from "@/services/hooks/";
-import { Button } from "@/components/ui/button";
+import { Analytics } from "@vercel/analytics/react";
 
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
@@ -56,6 +56,7 @@ const Homepage = () => {
         ESPAÑOL
         <FaLongArrowAltRight />
       </Button> */}
+      <Analytics />
       <p className="text-sm mt-20">
         Made by:{" "}
         <Link to={"https://github.com/juliben"} className="text-ring underline">

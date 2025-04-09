@@ -10,7 +10,7 @@ export const getFirstMessageFromAi = async (
   try {
     console.log("Getting first message from AI");
     const response = await axios.post(
-      "https://silkyxpphpftgloncpls.supabase.co/functions/v1/firstMessage"
+      "https://silkyxpphpftgloncpls.supabase.co/functions/v1/getAiMessage"
     );
     console.log("Response from AI:", response.data);
 

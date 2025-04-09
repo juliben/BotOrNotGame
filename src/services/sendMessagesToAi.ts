@@ -18,7 +18,8 @@ export const sendMessagesToAi = async (
     console.log("Sending messages to AI");
 
     const response = await fetch(
-      "https://silkyxpphpftgloncpls.functions.supabase.co/getAiMessage",
+      "https://silkyxpphpftgloncpls.supabase.co/functions/v1/getAiMessage",
+
       {
         method: "POST",
         headers: {

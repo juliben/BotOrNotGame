@@ -1,9 +1,10 @@
-import { NewGameButton, OnlineCount } from "./../components";
+import { OnlineCount } from "./../components";
 import { useFetchOnline } from "@/services/hooks/";
 import { Analytics } from "@vercel/analytics/react";
 
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui";
 
 const Homepage = () => {
   const navigate = useNavigate();
@@ -31,17 +32,15 @@ const Homepage = () => {
       <p>If a human is voted out, that human alone wins.</p>
       <p>Your goal: convince others you're the AI.</p>
 
-      <NewGameButton onClick={() => handleNavigate(false)} />
-
-      {/* <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Button
           variant="default"
-          className="w-fit"
-          onClick={() => handleNavigate(true)}
+          className="w-fit shadow-xl"
+          onClick={() => handleNavigate(false)}
         >
-          <p className={"text-2xl"}> PLAY WITH FRIENDS</p>
+          <p className={"text-2xl"}>NEW GAME</p>
         </Button>
-      </motion.div> */}
+      </motion.div>
       {/* <Button
         variant="ghost"
         className={"absolute bottom-5 right-5 flex row  items-center gap-1"}
